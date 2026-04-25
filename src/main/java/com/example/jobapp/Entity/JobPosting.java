@@ -5,6 +5,7 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -12,9 +13,11 @@ import java.time.LocalDateTime;
 @Table(
         name = "job_postings",
         indexes = {
-                @Index(name = "idx_job_postings_status",     columnList = "status"),
-                @Index(name = "idx_job_postings_category",   columnList = "category_id"),
-                @Index(name = "idx_job_postings_expires_at", columnList = "expires_at")
+                @Index(name = "idx_job_status",     columnList = "status"),
+                @Index(name = "idx_job_category",   columnList = "category_id"),
+                @Index(name = "idx_job_expires",    columnList = "expires_at"),
+                @Index(name = "idx_job_deleted",    columnList = "deleted_at"),
+                @Index(name = "idx_job_title",      columnList = "title")
         }
 )
 @Getter @Setter
@@ -26,22 +29,14 @@ public class JobPosting {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    // FK -> categories
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(
-            name = "category_id",
-            nullable = false,
-            foreignKey = @ForeignKey(name = "fk_job_postings_category")
-    )
+    @JoinColumn(name = "category_id", nullable = false,
+            foreignKey = @ForeignKey(name = "fk_job_category"))
     private Category category;
 
-    // FK -> admins
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(
-            name = "admin_id",
-            nullable = false,
-            foreignKey = @ForeignKey(name = "fk_job_postings_admin")
-    )
+    @JoinColumn(name = "admin_id", nullable = false,
+            foreignKey = @ForeignKey(name = "fk_job_admin"))
     private Admin admin;
 
     @Column(name = "title", nullable = false, length = 200)
@@ -50,32 +45,26 @@ public class JobPosting {
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
-    @Column(name = "requirements", columnDefinition = "TEXT")
-    private String requirements;
-
-    @Column(name = "benefits", columnDefinition = "TEXT")
-    private String benefits;
-
-    // Cột riêng của bạn — quyền lợi / điểm hấp dẫn
-    @Column(name = "interest", columnDefinition = "TEXT")
-    private String interest;
+    @Column(name = "salary", precision = 18, scale = 2)
+    private BigDecimal salary;
 
     @Column(name = "location", length = 200)
     private String location;
 
-    @Column(name = "contact_email", nullable = false, length = 100)
-    private String contactEmail;
-
-    @Column(name = "contact_phone", length = 20)
-    private String contactPhone;
+    @Column(name = "image_url", length = 500)
+    private String imageUrl;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false,
-            columnDefinition = "ENUM('draft','active','closed') DEFAULT 'draft'")
+            columnDefinition = "ENUM('ACTIVE','CLOSED') DEFAULT 'ACTIVE'")
     private JobStatus status;
 
     @Column(name = "expires_at")
     private LocalDate expiresAt;
+
+    // ✅ Soft delete
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -85,7 +74,12 @@ public class JobPosting {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
+    // ✅ FIX: Uppercase theo yêu cầu
     public enum JobStatus {
-        draft, active, closed
+        ACTIVE, CLOSED
+    }
+
+    public boolean isDeleted() {
+        return deletedAt != null;
     }
 }

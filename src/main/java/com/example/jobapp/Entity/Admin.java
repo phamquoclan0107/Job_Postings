@@ -42,7 +42,6 @@ public class Admin {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
-    // Một admin có thể tạo nhiều tin tuyển dụng
     @OneToMany(mappedBy = "admin", fetch = FetchType.LAZY)
     private List<JobPosting> jobPostings;
 }
