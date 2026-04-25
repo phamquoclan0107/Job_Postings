@@ -22,11 +22,38 @@ public class AuthService {
     private final AuthenticationManager authManager;
     private final JwtUtil             jwtUtil;
     private final PasswordEncoder     passwordEncoder;
+    private final OtpService          otpService;
 
-    // ─── Login ─────────────────────────────────────────────────────────────────
+    // ─── Register ────────────────────────────────────────────────────────────
+
+    @Transactional
+    public AdminDTO.AdminInfo register(AdminDTO.RegisterRequest req) {
+        if (!req.getPassword().equals(req.getConfirmPassword())) {
+            throw AppException.badRequest("Mật khẩu xác nhận không khớp");
+        }
+        if (adminRepo.existsByUsername(req.getUsername())) {
+            throw AppException.conflict("Username đã tồn tại");
+        }
+        if (adminRepo.existsByEmail(req.getEmail())) {
+            throw AppException.conflict("Email đã được sử dụng");
+        }
+
+        // FE gửi password → DTO nhận (không lưu) → Service hash → lưu password_hash
+        Admin admin = Admin.builder()
+                .username(req.getUsername())
+                .email(req.getEmail())
+                .passwordHash(passwordEncoder.encode(req.getPassword()))
+                .build();
+
+        adminRepo.save(admin);
+        log.info("Register success: username={}", admin.getUsername());
+
+        return toAdminInfo(admin);
+    }
+
+    // ─── Login ───────────────────────────────────────────────────────────────
 
     public AdminDTO.LoginResponse login(AdminDTO.LoginRequest req) {
-        // Spring Security ném BadCredentialsException nếu sai — GlobalHandler xử lý
         authManager.authenticate(
                 new UsernamePasswordAuthenticationToken(req.getUsername(), req.getPassword())
         );
@@ -38,11 +65,10 @@ public class AuthService {
         String refreshToken = jwtUtil.generateRefreshToken(admin.getUsername());
 
         log.info("Login success: username={}", admin.getUsername());
-
         return buildLoginResponse(admin, accessToken, refreshToken);
     }
 
-    // ─── Refresh token ─────────────────────────────────────────────────────────
+    // ─── Refresh token ────────────────────────────────────────────────────────
 
     public AdminDTO.LoginResponse refreshToken(String refreshToken) {
         if (!jwtUtil.validateToken(refreshToken) || !jwtUtil.isRefreshToken(refreshToken)) {
@@ -55,17 +81,21 @@ public class AuthService {
 
         String newAccessToken = jwtUtil.generateAccessToken(username);
         log.info("Token refreshed: username={}", username);
-
         return buildLoginResponse(admin, newAccessToken, refreshToken);
     }
 
-    // ─── Change password ───────────────────────────────────────────────────────
+    // ─── Change Password ──────────────────────────────────────────────────────
+    // Luồng: FE gửi oldPassword + newPassword + confirmPassword
+    //        → DTO nhận (không lưu DB)
+    //        → Service xử lý logic
+    //        → hash(newPassword) → lưu password_hash ✓
 
     @Transactional
     public void changePassword(String username, AdminDTO.ChangePasswordRequest req) {
         Admin admin = adminRepo.findByUsername(username)
                 .orElseThrow(() -> AppException.notFound("Admin không tồn tại"));
 
+        // Xác thực oldPassword với password_hash trong DB
         if (!passwordEncoder.matches(req.getOldPassword(), admin.getPasswordHash())) {
             throw AppException.badRequest("Mật khẩu cũ không chính xác");
         }
@@ -78,12 +108,51 @@ public class AuthService {
             throw AppException.badRequest("Mật khẩu mới không được trùng mật khẩu cũ");
         }
 
+        // hash(newPassword) → lưu password_hash vào DB
         admin.setPasswordHash(passwordEncoder.encode(req.getNewPassword()));
         adminRepo.save(admin);
         log.info("Password changed: username={}", username);
     }
 
-    // ─── Update profile ────────────────────────────────────────────────────────
+    // ─── Forgot Password — B1: gửi OTP về email ──────────────────────────────
+
+    public void sendForgotPasswordOtp(AdminDTO.ForgotPasswordRequest req) {
+        // Không tiết lộ email có tồn tại hay không (security)
+        adminRepo.findByEmail(req.getEmail()).ifPresent(admin ->
+            otpService.sendOtp(req.getEmail(), "[JobAdmin] Mã OTP đặt lại mật khẩu")
+        );
+        log.info("Forgot password OTP requested for email={}", req.getEmail());
+    }
+
+    // ─── Forgot Password — B2: xác thực OTP + đặt mật khẩu mới ─────────────
+    // Luồng: FE gửi email + otp + newPassword + confirmPassword
+    //        → DTO nhận (không lưu DB)
+    //        → Service verify OTP
+    //        → hash(newPassword) → lưu password_hash ✓
+
+    @Transactional
+    public void resetPassword(AdminDTO.ResetPasswordRequest req) {
+        if (!req.getNewPassword().equals(req.getConfirmPassword())) {
+            throw AppException.badRequest("Mật khẩu xác nhận không khớp");
+        }
+
+        // Xác thực OTP (không lưu OTP vào DB — lưu in-memory)
+        if (!otpService.verify(req.getEmail(), req.getOtp())) {
+            throw AppException.badRequest("OTP không hợp lệ hoặc đã hết hạn");
+        }
+
+        Admin admin = adminRepo.findByEmail(req.getEmail())
+                .orElseThrow(() -> AppException.notFound("Tài khoản không tồn tại"));
+
+        // hash(newPassword) → lưu password_hash vào DB
+        admin.setPasswordHash(passwordEncoder.encode(req.getNewPassword()));
+        adminRepo.save(admin);
+
+        otpService.invalidate(req.getEmail()); // xoá OTP sau khi dùng
+        log.info("Password reset success: email={}", req.getEmail());
+    }
+
+    // ─── Update Profile ───────────────────────────────────────────────────────
 
     @Transactional
     public AdminDTO.AdminInfo updateProfile(String username, AdminDTO.UpdateProfileRequest req) {
@@ -99,28 +168,26 @@ public class AuthService {
 
         adminRepo.save(admin);
         log.info("Profile updated: username={}", username);
-
-        return AdminDTO.AdminInfo.builder()
-                .id(admin.getId())
-                .username(admin.getUsername())
-                .email(admin.getEmail())
-                .createdAt(admin.getCreatedAt())
-                .build();
+        return toAdminInfo(admin);
     }
 
-    // ─── Private ───────────────────────────────────────────────────────────────
+    // ─── Private ─────────────────────────────────────────────────────────────
 
     private AdminDTO.LoginResponse buildLoginResponse(Admin admin, String access, String refresh) {
         return AdminDTO.LoginResponse.builder()
                 .accessToken(access)
                 .refreshToken(refresh)
-                .expiresIn(900L) // 15 phút tính bằng giây
-                .admin(AdminDTO.AdminInfo.builder()
-                        .id(admin.getId())
-                        .username(admin.getUsername())
-                        .email(admin.getEmail())
-                        .createdAt(admin.getCreatedAt())
-                        .build())
+                .expiresIn(900L)
+                .admin(toAdminInfo(admin))
+                .build();
+    }
+
+    private AdminDTO.AdminInfo toAdminInfo(Admin admin) {
+        return AdminDTO.AdminInfo.builder()
+                .id(admin.getId())
+                .username(admin.getUsername())
+                .email(admin.getEmail())
+                .createdAt(admin.getCreatedAt())
                 .build();
     }
 }

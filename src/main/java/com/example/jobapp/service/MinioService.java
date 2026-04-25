@@ -12,19 +12,14 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Service xử lý upload file lên MinIO Local.
+ * Service upload/delete file lên MinIO.
  *
- * Luồng hoạt động:
- *   1. FE gọi POST /api/v1/upload với multipart/form-data
- *   2. Service tạo tên file unique (UUID + extension gốc)
- *   3. Upload lên bucket đã cấu hình
- *   4. Trả về public URL dạng: http://localhost:9000/{bucket}/{objectName}
+ * Luồng:
+ *   FE → POST /api/upload → MinioService.uploadFile()
+ *     → lưu lên bucket
+ *     → trả về public URL: {app.minio.public-url}/{objectName}
  *
- * Điều kiện: bucket phải được set policy = public-read trước.
- * Cách set qua MinIO Console hoặc mc CLI:
- *   mc alias set local http://localhost:9000 minioadmin minioadmin
- *   mc mb local/job-uploads
- *   mc anonymous set public local/job-uploads
+ * app.minio.public-url có thể trỏ ra domain/IP public nếu deploy VPS.
  */
 @Slf4j
 @Service
@@ -33,79 +28,72 @@ public class MinioService {
 
     private final MinioClient minioClient;
 
-    @Value("${minio.bucket-name}")
-    private String bucketName;
+    @Value("${app.minio.bucket}")
+    private String bucket;
 
-    @Value("${minio.endpoint}")
-    private String endpoint;
+    @Value("${app.minio.url}")
+    private String minioUrl;
+
+    @Value("${app.minio.public-url}")
+    private String publicUrl;
+
+    // ─── Upload ──────────────────────────────────────────────────────────────
 
     /**
-     * Upload file, trả về URL công khai.
-     * URL format: http://localhost:9000/{bucket}/{uuid-filename}
+     * Upload file lên MinIO, trả về public URL.
+     * URL: {app.minio.public-url}/{uuid}.ext
      */
     public String uploadFile(MultipartFile file) {
         try {
-            // Đảm bảo bucket tồn tại
             ensureBucketExists();
 
-            // Tạo tên file unique để tránh trùng lặp
-            String originalFilename = file.getOriginalFilename();
-            String extension = "";
-            if (originalFilename != null && originalFilename.contains(".")) {
-                extension = originalFilename.substring(originalFilename.lastIndexOf("."));
-            }
-            String objectName = UUID.randomUUID() + extension;
+            String ext        = getExtension(file.getOriginalFilename());
+            String objectName = UUID.randomUUID() + ext;
 
-            // Upload lên MinIO
             minioClient.putObject(
                     PutObjectArgs.builder()
-                            .bucket(bucketName)
+                            .bucket(bucket)
                             .object(objectName)
                             .stream(file.getInputStream(), file.getSize(), -1)
                             .contentType(file.getContentType())
                             .build()
             );
 
-            // Trả về URL công khai
-            // Bucket phải có policy public-read để URL này hoạt động không cần sign
-            String publicUrl = endpoint + "/" + bucketName + "/" + objectName;
-            log.info("Uploaded file to MinIO: {}", publicUrl);
-            return publicUrl;
+            String url = publicUrl + "/" + objectName;
+            log.info("Uploaded to MinIO: {}", url);
+            return url;
 
         } catch (Exception e) {
-            log.error("Error uploading file to MinIO", e);
+            log.error("Error uploading to MinIO", e);
             throw new RuntimeException("Không thể upload file: " + e.getMessage(), e);
         }
     }
 
-    /**
-     * Xóa file khỏi MinIO theo URL hoặc objectName.
-     */
+    // ─── Delete ──────────────────────────────────────────────────────────────
+
     public void deleteFile(String objectName) {
         try {
             minioClient.removeObject(
                     RemoveObjectArgs.builder()
-                            .bucket(bucketName)
+                            .bucket(bucket)
                             .object(objectName)
                             .build()
             );
-            log.info("Deleted file from MinIO: {}", objectName);
+            log.info("Deleted from MinIO: {}", objectName);
         } catch (Exception e) {
-            log.error("Error deleting file from MinIO: {}", objectName, e);
+            log.error("Error deleting from MinIO: {}", objectName, e);
             throw new RuntimeException("Không thể xóa file: " + e.getMessage(), e);
         }
     }
 
-    /**
-     * Lấy presigned URL (tạm thời, có thời hạn) cho file private.
-     * Dùng khi bucket không public nhưng cần cho người dùng tải xuống.
-     */
+    // ─── Presigned URL ───────────────────────────────────────────────────────
+
     public String getPresignedUrl(String objectName, int expiryMinutes) {
         try {
             return minioClient.getPresignedObjectUrl(
                     GetPresignedObjectUrlArgs.builder()
                             .method(Method.GET)
-                            .bucket(bucketName)
+                            .bucket(bucket)
                             .object(objectName)
                             .expiry(expiryMinutes, TimeUnit.MINUTES)
                             .build()
@@ -116,15 +104,22 @@ public class MinioService {
         }
     }
 
-    // ─── Private helpers ──────────────────────────────────────────────────────
+    // ─── Helpers ─────────────────────────────────────────────────────────────
 
     private void ensureBucketExists() throws Exception {
         boolean exists = minioClient.bucketExists(
-                BucketExistsArgs.builder().bucket(bucketName).build()
+                BucketExistsArgs.builder().bucket(bucket).build()
         );
         if (!exists) {
-            minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucketName).build());
-            log.info("Created MinIO bucket: {}", bucketName);
+            minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucket).build());
+            log.info("Created MinIO bucket: {}", bucket);
         }
+    }
+
+    private String getExtension(String filename) {
+        if (filename != null && filename.contains(".")) {
+            return filename.substring(filename.lastIndexOf("."));
+        }
+        return "";
     }
 }

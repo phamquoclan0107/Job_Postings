@@ -1,7 +1,3 @@
-// ============================================================
-// FILE: AdminRepository.java
-// Package: com.example.jobapp.repository
-// ============================================================
 package com.example.jobapp.repository;
 
 import com.example.jobapp.Entity.Admin;
@@ -13,6 +9,7 @@ import java.util.Optional;
 @Repository
 public interface AdminRepository extends JpaRepository<Admin, Integer> {
     Optional<Admin> findByUsername(String username);
+    Optional<Admin> findByEmail(String email);       // thêm để hỗ trợ forgot password
     boolean existsByUsername(String username);
     boolean existsByEmail(String email);
 }

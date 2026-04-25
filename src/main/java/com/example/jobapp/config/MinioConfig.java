@@ -7,28 +7,25 @@ import org.springframework.context.annotation.Configuration;
 
 /**
  * Cấu hình MinIO client.
- * Đặt các giá trị trong application.properties:
- *   minio.endpoint=http://localhost:9000
- *   minio.access-key=minioadmin
- *   minio.secret-key=minioadmin
- *   minio.bucket-name=job-uploads
+ * Tất cả giá trị đọc từ app.minio.* trong application.properties
+ * → được inject từ biến môi trường MINIO_* qua docker-compose.
  */
 @Configuration
 public class MinioConfig {
 
-    @Value("${minio.endpoint}")
-    private String endpoint;
+    @Value("${app.minio.url}")
+    private String url;
 
-    @Value("${minio.access-key}")
+    @Value("${app.minio.access-key}")
     private String accessKey;
 
-    @Value("${minio.secret-key}")
+    @Value("${app.minio.secret-key}")
     private String secretKey;
 
     @Bean
     public MinioClient minioClient() {
         return MinioClient.builder()
-                .endpoint(endpoint)
+                .endpoint(url)
                 .credentials(accessKey, secretKey)
                 .build();
     }
