@@ -13,8 +13,9 @@ import org.springframework.web.bind.annotation.*;
 /**
  * User endpoints — cần JWT.
  *
- * PUT /api/users/change-password  — đổi mật khẩu (oldPass + newPass + confirmPass)
- * PUT /api/users/me               — cập nhật thông tin cá nhân
+ * GET  /api/users/me               — lấy thông tin profile
+ * PUT  /api/users/me               — cập nhật thông tin cá nhân
+ * PUT  /api/users/change-password  — đổi mật khẩu
  */
 @RestController
 @RequestMapping("/api/users")
@@ -23,17 +24,13 @@ public class UserController {
 
     private final AuthService authService;
 
-    // ─── Change Password ──────────────────────────────────────────────────────
-    // Luồng: FE gửi oldPassword + newPassword + confirmPassword
-    //        → DTO nhận (không lưu DB)
-    //        → Service xử lý logic → hash → lưu password_hash ✓
+    // ─── Get Profile ──────────────────────────────────────────────────────────
 
-    @PutMapping("/change-password")
-    public ResponseEntity<ApiResponse<Void>> changePassword(
-            @AuthenticationPrincipal UserDetails userDetails,
-            @Valid @RequestBody AdminDTO.ChangePasswordRequest req) {
-        authService.changePassword(userDetails.getUsername(), req);
-        return ResponseEntity.ok(ApiResponse.noContent("Đổi mật khẩu thành công"));
+    @GetMapping("/me")
+    public ResponseEntity<ApiResponse<AdminDTO.AdminInfo>> getProfile(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        AdminDTO.AdminInfo info = authService.getProfile(userDetails.getUsername());
+        return ResponseEntity.ok(ApiResponse.ok("Lấy thông tin thành công", info));
     }
 
     // ─── Update Profile ───────────────────────────────────────────────────────
@@ -44,5 +41,15 @@ public class UserController {
             @Valid @RequestBody AdminDTO.UpdateProfileRequest req) {
         AdminDTO.AdminInfo info = authService.updateProfile(userDetails.getUsername(), req);
         return ResponseEntity.ok(ApiResponse.ok("Cập nhật thông tin thành công", info));
+    }
+
+    // ─── Change Password ──────────────────────────────────────────────────────
+
+    @PutMapping("/change-password")
+    public ResponseEntity<ApiResponse<Void>> changePassword(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @Valid @RequestBody AdminDTO.ChangePasswordRequest req) {
+        authService.changePassword(userDetails.getUsername(), req);
+        return ResponseEntity.ok(ApiResponse.noContent("Đổi mật khẩu thành công"));
     }
 }

@@ -190,4 +190,11 @@ public class AuthService {
                 .createdAt(admin.getCreatedAt())
                 .build();
     }
+    // ─── Get Profile ─────────────────────────────────────────────────────────
+
+    public AdminDTO.AdminInfo getProfile(String username) {
+        Admin admin = adminRepo.findByUsername(username)
+                .orElseThrow(() -> AppException.notFound("Admin không tồn tại"));
+        return toAdminInfo(admin);
+    }
 }
