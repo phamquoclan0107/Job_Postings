@@ -33,42 +33,15 @@ public class JobPostingController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createdAt,desc") String sort) {
 
-        String[] sortParts = sort.split(",");
-        Sort.Direction dir = sortParts.length > 1 && sortParts[1].equalsIgnoreCase("asc")
-                ? Sort.Direction.ASC : Sort.Direction.DESC;
-        Pageable pageable = PageRequest.of(page, size, Sort.by(dir, sortParts[0]));
-
+        Pageable pageable = buildPageable(page, size, sort);
         Page<JobPostingDTO.SummaryResponse> result = jobService.search(
                 keyword, location, salaryMin, salaryMax, categoryId, status, pageable);
         return ResponseEntity.ok(ApiResponse.ok(result));
     }
 
-    @GetMapping("/search")
-    public ResponseEntity<ApiResponse<Page<JobPostingDTO.SummaryResponse>>> search(
-            @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) String title,
-            @RequestParam(required = false) String location,
-            @RequestParam(required = false) BigDecimal salaryMin,
-            @RequestParam(required = false) BigDecimal salaryMax,
-            @RequestParam(required = false) Integer categoryId,
-            @RequestParam(required = false) JobStatus status,
-            @RequestParam(defaultValue = "0")  int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "createdAt,desc") String sort) {
-
-        String[] sortParts = sort.split(",");
-        Sort.Direction dir = sortParts.length > 1 && sortParts[1].equalsIgnoreCase("asc")
-                ? Sort.Direction.ASC : Sort.Direction.DESC;
-        Pageable pageable = PageRequest.of(page, size, Sort.by(dir, sortParts[0]));
-
-        String kw = keyword != null ? keyword : title;
-        Page<JobPostingDTO.SummaryResponse> result = jobService.search(
-                kw, location, salaryMin, salaryMax, categoryId, status, pageable);
-        return ResponseEntity.ok(ApiResponse.ok(result));
-    }
-
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<JobPostingDTO.DetailResponse>> getById(@PathVariable Integer id) {
+    public ResponseEntity<ApiResponse<JobPostingDTO.DetailResponse>> getById(
+            @PathVariable Integer id) {
         return ResponseEntity.ok(ApiResponse.ok(jobService.getById(id)));
     }
 
@@ -101,5 +74,12 @@ public class JobPostingController {
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Integer id) {
         jobService.delete(id);
         return ResponseEntity.ok(ApiResponse.noContent("Xóa tin tuyển dụng thành công"));
+    }
+
+    private Pageable buildPageable(int page, int size, String sort) {
+        String[] parts = sort.split(",");
+        Sort.Direction dir = parts.length > 1 && parts[1].equalsIgnoreCase("asc")
+                ? Sort.Direction.ASC : Sort.Direction.DESC;
+        return PageRequest.of(page, size, Sort.by(dir, parts[0]));
     }
 }

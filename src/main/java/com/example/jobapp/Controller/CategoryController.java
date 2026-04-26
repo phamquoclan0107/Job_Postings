@@ -3,6 +3,7 @@ package com.example.jobapp.Controller;
 import com.example.jobapp.common.ApiResponse;
 import com.example.jobapp.DTOs.CategoryDTO;
 import com.example.jobapp.Entity.Category.CategoryType;
+import com.example.jobapp.exception.AppException;
 import com.example.jobapp.service.CategoryService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -31,9 +32,14 @@ public class CategoryController {
     public ResponseEntity<ApiResponse<List<CategoryDTO.Response>>> getAll(
             @RequestParam(required = false) String type) {
 
-        CategoryType parsedType = (type != null)
-                ? CategoryType.valueOf(type.toUpperCase())
-                : null;
+        CategoryType parsedType = null;
+        if (type != null && !type.isBlank()) {
+            try {
+                parsedType = CategoryType.valueOf(type.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                throw AppException.badRequest("Loại danh mục không hợp lệ: '" + type + "'. Chỉ chấp nhận JOB hoặc PRODUCT");
+            }
+        }
 
         List<CategoryDTO.Response> data = (parsedType != null)
                 ? categoryService.getByType(parsedType)

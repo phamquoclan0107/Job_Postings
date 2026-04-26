@@ -36,13 +36,13 @@ public class SecurityConfig {
                         // Public: auth endpoints
                         .requestMatchers("/api/auth/**").permitAll()
 
-                        // Public GET: jobs, products, categories (ai cũng có thể xem)
+                        // Public GET: jobs, products, categories
                         .requestMatchers(HttpMethod.GET, "/api/jobs/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
 
-                        // Tất cả còn lại cần xác thực
-                        .anyRequest().permitAll()
+                        // Tất cả còn lại phải xác thực
+                        .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);

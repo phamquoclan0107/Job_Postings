@@ -19,7 +19,6 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    // Custom AppException
     @ExceptionHandler(AppException.class)
     public ResponseEntity<ApiResponse<Void>> handleAppException(AppException ex) {
         log.error("AppException: status={}, message={}", ex.getStatus(), ex.getMessage());
@@ -28,22 +27,19 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error(ex.getMessage()));
     }
 
-    // Validation lỗi field
+    // Validation — chuẩn hóa về ApiResponse, không trả Map thô nữa
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, Object>> handleValidation(MethodArgumentNotValidException ex) {
+    public ResponseEntity<ApiResponse<Void>> handleValidation(MethodArgumentNotValidException ex) {
         Map<String, String> fieldErrors = new HashMap<>();
         for (FieldError fe : ex.getBindingResult().getFieldErrors()) {
             fieldErrors.put(fe.getField(), fe.getDefaultMessage());
         }
-        Map<String, Object> body = new HashMap<>();
-        body.put("success", false);
-        body.put("message", "Validation failed");
-        body.put("errors", fieldErrors);
         log.warn("Validation failed: {}", fieldErrors);
-        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(body);
+        return ResponseEntity
+                .status(HttpStatus.UNPROCESSABLE_ENTITY)
+                .body(ApiResponse.validationError("Dữ liệu không hợp lệ", fieldErrors));
     }
 
-    // Sai credentials JWT
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<ApiResponse<Void>> handleBadCredentials(BadCredentialsException ex) {
         log.warn("Bad credentials: {}", ex.getMessage());
@@ -52,7 +48,6 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error("Sai tên đăng nhập hoặc mật khẩu"));
     }
 
-    // Không có quyền
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ApiResponse<Void>> handleAccessDenied(AccessDeniedException ex) {
         return ResponseEntity
@@ -60,7 +55,14 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error("Không có quyền truy cập"));
     }
 
-    // File quá lớn
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ApiResponse<Void>> handleIllegalArgument(IllegalArgumentException ex) {
+        log.warn("IllegalArgumentException: {}", ex.getMessage());
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error("Giá trị không hợp lệ: " + ex.getMessage()));
+    }
+
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     public ResponseEntity<ApiResponse<Void>> handleMaxUploadSize(MaxUploadSizeExceededException ex) {
         return ResponseEntity
@@ -68,7 +70,6 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error("File quá lớn. Tối đa 10MB"));
     }
 
-    // Catch-all
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleGeneral(Exception ex) {
         log.error("Unhandled exception", ex);

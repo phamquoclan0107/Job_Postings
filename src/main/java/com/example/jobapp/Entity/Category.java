@@ -8,7 +8,12 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
-@Table(name = "categories")
+@Table(
+        name = "categories",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uq_category_name_type", columnNames = {"name", "type"})
+        }
+)
 @Getter @Setter
 @NoArgsConstructor @AllArgsConstructor
 @Builder
@@ -35,8 +40,7 @@ public class Category {
     @OneToMany(mappedBy = "category", fetch = FetchType.LAZY)
     private List<Product> products;
 
-    // ✅ FIX: Uppercase theo yêu cầu
     public enum CategoryType {
-        job, product
+        JOB, PRODUCT
     }
 }
