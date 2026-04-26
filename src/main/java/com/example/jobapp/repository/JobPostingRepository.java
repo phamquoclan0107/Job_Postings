@@ -23,7 +23,7 @@ public interface JobPostingRepository extends JpaRepository<JobPosting, Integer>
             "JOIN FETCH j.category c " +
             "JOIN FETCH j.admin a " +
             "WHERE j.deletedAt IS NULL " +
-            "AND j.status = 'ACTIVE' " +
+            "AND j.status = com.example.jobapp.Entity.JobPosting.JobStatus.ACTIVE " +
             "ORDER BY j.createdAt DESC")
     List<JobPosting> findAllActive();
 
@@ -67,7 +67,7 @@ public interface JobPostingRepository extends JpaRepository<JobPosting, Integer>
             "JOIN FETCH j.category c " +
             "JOIN FETCH j.admin a " +
             "WHERE j.deletedAt IS NULL " +
-            "AND j.status = 'ACTIVE' " +
+            "AND j.status = com.example.jobapp.Entity.JobPosting.JobStatus.ACTIVE " +
             "AND j.category.id = :categoryId " +
             "AND j.id <> :excludeId " +
             "ORDER BY j.createdAt DESC")
@@ -79,7 +79,7 @@ public interface JobPostingRepository extends JpaRepository<JobPosting, Integer>
 
     @Query("SELECT j FROM JobPosting j " +
             "WHERE j.deletedAt IS NULL " +
-            "AND j.status = 'ACTIVE' " +
+            "AND j.status = com.example.jobapp.Entity.JobPosting.JobStatus.ACTIVE " +
             "AND j.expiresAt IS NOT NULL " +
             "AND j.expiresAt < :today")
     List<JobPosting> findExpiredActiveJobs(@Param("today") LocalDate today);
@@ -89,8 +89,8 @@ public interface JobPostingRepository extends JpaRepository<JobPosting, Integer>
     void softDelete(@Param("id") Integer id, @Param("now") LocalDateTime now);
 
     @Modifying
-    @Query("UPDATE JobPosting j SET j.status = 'CLOSED', j.updatedAt = :now " +
-            "WHERE j.status = 'ACTIVE' " +
+    @Query("UPDATE JobPosting j SET j.status = com.example.jobapp.Entity.JobPosting.JobStatus.CLOSED, j.updatedAt = :now " +
+            "WHERE j.status = com.example.jobapp.Entity.JobPosting.JobStatus.ACTIVE " +
             "AND j.deletedAt IS NULL " +
             "AND j.expiresAt IS NOT NULL " +
             "AND j.expiresAt < :today")
