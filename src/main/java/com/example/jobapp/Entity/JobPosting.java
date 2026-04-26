@@ -3,7 +3,9 @@ package com.example.jobapp.Entity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -41,9 +43,6 @@ public class JobPosting {
     @Column(name = "title", nullable = false, length = 200)
     private String title;
 
-//    @Column(name = "company_name", length = 200)
-//    private String companyName;
-
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
@@ -56,17 +55,18 @@ public class JobPosting {
     @Column(name = "location", length = 200)
     private String location;
 
+    // Dùng VARCHAR + @JdbcTypeCode(SqlTypes.VARCHAR) để tránh MySQLEnumJdbcType đọc case-sensitive
     @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.VARCHAR)
     @Column(name = "job_type", length = 50)
     private JobType jobType;
 
-    // Đổi sang VARCHAR — admin tự nhập tự do thay vì chọn enum cố định
     @Column(name = "experience_level", length = 100)
     private String experienceLevel;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false,
-            columnDefinition = "ENUM('ACTIVE','CLOSED') DEFAULT 'ACTIVE'")
+    @JdbcTypeCode(SqlTypes.VARCHAR)
+    @Column(name = "status", nullable = false, length = 10, columnDefinition = "VARCHAR(10) DEFAULT 'ACTIVE'")
     private JobStatus status;
 
     @Column(name = "contact_email", nullable = false, length = 255)
