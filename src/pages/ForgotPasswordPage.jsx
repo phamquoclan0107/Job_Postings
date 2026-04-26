@@ -5,6 +5,20 @@ import toast from 'react-hot-toast'
 
 const STEP = { EMAIL: 'email', OTP: 'otp' }
 
+const S = {
+  page:  { minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff', padding: 20 },
+  card:  { width: '100%', maxWidth: 420, background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: '40px 36px', boxShadow: '0 4px 24px rgba(0,0,0,0.07)' },
+  logo:  { fontWeight: 800, fontSize: 20, color: '#111827', marginBottom: 28, display: 'block' },
+  h1:    { fontSize: 24, fontWeight: 800, color: '#111827', margin: '0 0 6px' },
+  sub:   { fontSize: 13, color: '#6b7280', marginBottom: 28, lineHeight: 1.6 },
+  label: { display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 6 },
+  input: { width: '100%', padding: '10px 14px', border: '1px solid #e5e7eb', borderRadius: 8, fontSize: 14, color: '#111827', background: '#fff', boxSizing: 'border-box', outline: 'none' },
+  btn:   { width: '100%', padding: '12px', background: '#111827', color: '#fff', border: 'none', borderRadius: 8, fontSize: 15, fontWeight: 700, cursor: 'pointer', marginTop: 8 },
+  btnSec:{ width: '100%', padding: '11px', background: '#fff', color: '#374151', border: '1px solid #e5e7eb', borderRadius: 8, fontSize: 14, fontWeight: 500, cursor: 'pointer', marginTop: 8 },
+  err:   { fontSize: 13, color: '#dc2626', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, padding: '10px 14px', marginBottom: 16 },
+  link:  { color: '#111827', fontWeight: 600, textDecoration: 'none' },
+}
+
 export default function ForgotPasswordPage() {
   const navigate = useNavigate()
   const [step, setStep]       = useState(STEP.EMAIL)
@@ -42,112 +56,87 @@ export default function ForgotPasswordPage() {
     } finally { setLoading(false) }
   }
 
-  const inputCls = 'w-full px-3.5 py-2.5 bg-bg border border-border rounded-lg text-text-pri text-sm outline-none box-border'
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-bg relative overflow-hidden p-5">
-      <div className="absolute inset-0 bg-grid-pattern pointer-events-none" />
-      <div className="relative w-full max-w-[420px] bg-bg-card border border-border rounded-xl p-9 shadow-card">
-        {/* Logo */}
-        <div className="flex items-center gap-2.5 mb-6">
-          <div className="w-9 h-9 rounded-[10px] bg-accent text-black flex items-center justify-center font-head font-extrabold text-xl">J</div>
-          <span className="font-head font-bold text-xl text-text-pri">JobAdmin</span>
+    <div style={S.page}>
+      <div style={S.card}>
+        <span style={S.logo}>FreMed Admin</span>
+
+        {/* Step indicators */}
+        <div style={{ display: 'flex', alignItems: 'center', marginBottom: 28, gap: 8 }}>
+          {['Nhập email', 'Xác thực OTP'].map((label, i) => {
+            const n = i + 1
+            const done = (i === 0 && step === STEP.OTP)
+            const active = (i === 0 && step === STEP.EMAIL) || (i === 1 && step === STEP.OTP)
+            return (
+              <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                {i > 0 && <div style={{ width: 32, height: 1, background: '#e5e7eb' }} />}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <div style={{ width: 24, height: 24, borderRadius: '50%', background: active || done ? '#111827' : '#f3f4f6', color: active || done ? '#fff' : '#9ca3af', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700 }}>
+                    {done ? '✓' : n}
+                  </div>
+                  <span style={{ fontSize: 12, fontWeight: active ? 600 : 400, color: active ? '#111827' : '#9ca3af' }}>{label}</span>
+                </div>
+              </div>
+            )
+          })}
         </div>
 
-        {/* Step indicator */}
-        <div className="flex items-start justify-center gap-0 mb-6">
-          <StepDot n={1} active={step === STEP.EMAIL} done={step === STEP.OTP} label="Nhập email" />
-          <div className="flex-1 h-0.5 bg-border mt-3.5 max-w-[60px]" />
-          <StepDot n={2} active={step === STEP.OTP} done={false} label="Xác thực OTP" />
-        </div>
-
-        {/* Step 1 */}
         {step === STEP.EMAIL && (
           <>
-            <h1 className="font-head text-2xl font-extrabold text-text-pri leading-tight">Quên mật khẩu</h1>
-            <p className="text-[13px] text-text-sec mt-1.5 leading-relaxed">Nhập email đăng ký để nhận mã OTP xác thực.</p>
-            <form onSubmit={handleSendOtp} className="mt-6">
-              <div className="mb-3.5">
-                <label className="block text-[13px] font-semibold text-text-sec mb-1.5">Email</label>
+            <h1 style={S.h1}>Quên mật khẩu</h1>
+            <p style={S.sub}>Nhập email đăng ký để nhận mã OTP xác thực.</p>
+            <form onSubmit={handleSendOtp}>
+              <div style={{ marginBottom: 16 }}>
+                <label style={S.label}>Email</label>
                 <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com" autoComplete="email" className={inputCls} />
+                  placeholder="you@example.com" autoComplete="email" style={S.input} />
               </div>
-              {error && <p className="text-[13px] text-red bg-red/[.08] border border-red/20 rounded-lg px-3.5 py-2.5 mb-3.5">{error}</p>}
-              <button type="submit" disabled={loading}
-                className="w-full py-3 bg-accent text-black border-0 rounded-lg text-[15px] font-bold cursor-pointer mt-1 transition-opacity disabled:opacity-60 disabled:cursor-not-allowed">
-                {loading ? <SpinnerText text="Đang gửi OTP..." /> : 'Gửi mã OTP'}
+              {error && <p style={S.err}>{error}</p>}
+              <button type="submit" disabled={loading} style={{ ...S.btn, opacity: loading ? 0.6 : 1 }}>
+                {loading ? 'Đang gửi OTP...' : 'Gửi mã OTP'}
               </button>
             </form>
           </>
         )}
 
-        {/* Step 2 */}
         {step === STEP.OTP && (
           <>
-            <h1 className="font-head text-2xl font-extrabold text-text-pri leading-tight">Đặt mật khẩu mới</h1>
-            <p className="text-[13px] text-text-sec mt-1.5 leading-relaxed">
-              OTP đã gửi tới <strong className="text-text-pri">{email}</strong>. Nhập OTP và mật khẩu mới bên dưới.
-            </p>
-            <form onSubmit={handleResetPassword} className="mt-6">
-              <div className="mb-3.5">
-                <label className="block text-[13px] font-semibold text-text-sec mb-1.5">Mã OTP (6 chữ số)</label>
-                <input name="otp" value={form.otp} onChange={(e) => setForm(p => ({ ...p, otp: e.target.value }))}
+            <h1 style={S.h1}>Đặt mật khẩu mới</h1>
+            <p style={S.sub}>OTP đã gửi tới <strong style={{ color: '#111827' }}>{email}</strong>. Nhập OTP và mật khẩu mới bên dưới.</p>
+            <form onSubmit={handleResetPassword}>
+              <div style={{ marginBottom: 16 }}>
+                <label style={S.label}>Mã OTP (6 chữ số)</label>
+                <input value={form.otp} onChange={(e) => setForm(p => ({ ...p, otp: e.target.value }))}
                   placeholder="123456" maxLength={6} inputMode="numeric"
-                  className={`${inputCls} tracking-[6px] text-xl text-center`} />
+                  style={{ ...S.input, letterSpacing: '0.3em', textAlign: 'center', fontSize: 20 }} />
               </div>
-              <div className="mb-3.5">
-                <label className="block text-[13px] font-semibold text-text-sec mb-1.5">Mật khẩu mới</label>
-                <input name="newPassword" type="password" value={form.newPassword}
+              <div style={{ marginBottom: 16 }}>
+                <label style={S.label}>Mật khẩu mới</label>
+                <input type="password" value={form.newPassword}
                   onChange={(e) => setForm(p => ({ ...p, newPassword: e.target.value }))}
-                  placeholder="••••••••" autoComplete="new-password" className={inputCls} />
-                <span className="text-[11px] text-text-mute mt-1 block">Tối thiểu 6 ký tự, gồm chữ và số</span>
+                  placeholder="••••••••" autoComplete="new-password" style={S.input} />
               </div>
-              <div className="mb-3.5">
-                <label className="block text-[13px] font-semibold text-text-sec mb-1.5">Xác nhận mật khẩu mới</label>
-                <input name="confirmPassword" type="password" value={form.confirmPassword}
+              <div style={{ marginBottom: 16 }}>
+                <label style={S.label}>Xác nhận mật khẩu mới</label>
+                <input type="password" value={form.confirmPassword}
                   onChange={(e) => setForm(p => ({ ...p, confirmPassword: e.target.value }))}
-                  placeholder="••••••••" autoComplete="new-password" className={inputCls} />
+                  placeholder="••••••••" autoComplete="new-password" style={S.input} />
               </div>
-              {error && <p className="text-[13px] text-red bg-red/[.08] border border-red/20 rounded-lg px-3.5 py-2.5 mb-3.5">{error}</p>}
-              <button type="submit" disabled={loading}
-                className="w-full py-3 bg-accent text-black border-0 rounded-lg text-[15px] font-bold cursor-pointer mt-1 transition-opacity disabled:opacity-60 disabled:cursor-not-allowed">
-                {loading ? <SpinnerText text="Đang xử lý..." /> : 'Đặt lại mật khẩu'}
+              {error && <p style={S.err}>{error}</p>}
+              <button type="submit" disabled={loading} style={{ ...S.btn, opacity: loading ? 0.6 : 1 }}>
+                {loading ? 'Đang xử lý...' : 'Đặt lại mật khẩu'}
               </button>
-              <button type="button" onClick={() => { setStep(STEP.EMAIL); setError('') }}
-                className="w-full py-2.5 bg-transparent text-text-sec border border-border rounded-lg text-sm font-medium cursor-pointer mt-2">
+              <button type="button" onClick={() => { setStep(STEP.EMAIL); setError('') }} style={S.btnSec}>
                 Gửi lại OTP
               </button>
             </form>
           </>
         )}
 
-        <p className="text-center mt-5 text-sm">
-          <Link to="/login" className="text-accent font-semibold no-underline">← Quay lại đăng nhập</Link>
+        <p style={{ textAlign: 'center', marginTop: 20, fontSize: 14 }}>
+          <Link to="/login" style={{ ...S.link, color: '#6b7280' }}>← Quay lại đăng nhập</Link>
         </p>
       </div>
     </div>
-  )
-}
-
-function StepDot({ n, active, done, label }) {
-  const isHighlit = done || active
-  return (
-    <div className="flex flex-col items-center gap-1">
-      <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[13px] font-bold ${isHighlit ? 'bg-accent text-black' : 'bg-border text-text-mute'}`}>
-        {done ? '✓' : n}
-      </div>
-      <span className={`text-[11px] font-${active ? 'semibold' : 'normal'} ${active ? 'text-accent' : 'text-text-mute'}`}>{label}</span>
-    </div>
-  )
-}
-
-function SpinnerText({ text }) {
-  return (
-    <span className="flex items-center gap-2 justify-center">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="spin">
-        <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
-      </svg>
-      {text}
-    </span>
   )
 }

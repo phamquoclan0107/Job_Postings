@@ -1,4 +1,3 @@
-// src/utils/formatters.js
 import { format, parseISO } from 'date-fns'
 import { vi } from 'date-fns/locale'
 
@@ -20,6 +19,27 @@ export const formatDateTime = (dateStr) => {
   }
 }
 
+const formatMillions = (value) => {
+  if (value == null) return '0'
+  const millions = Number(value) / 1_000_000
+  return millions % 1 === 0 ? `${millions}tr` : `${millions.toFixed(1)}tr`
+}
+
+// Dùng ở MỌI chỗ hiển thị lương — thay thế formatSalary cũ
+export const formatSalaryRange = (job) => {
+  const { salary, salaryMin, salaryMax } = job || {}
+  if (salaryMin != null && salaryMax != null) {
+    return `${formatMillions(salaryMin)} - ${formatMillions(salaryMax)}`
+  }
+  if (salaryMin != null) return `Từ ${formatMillions(salaryMin)}`
+  if (salaryMax != null) return `Đến ${formatMillions(salaryMax)}`
+  if (salary != null) {
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(salary)
+  }
+  return 'Thỏa thuận'
+}
+
+// Giữ lại để tương thích nhưng deprecated — dùng formatSalaryRange thay thế
 export const formatSalary = (salary) => {
   if (!salary) return 'Thỏa thuận'
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(salary)
@@ -38,4 +58,26 @@ export const getStatusColor = (status) => {
 export const getCategoryTypeLabel = (type) => {
   const map = { JOB: 'Việc làm', PRODUCT: 'Sản phẩm' }
   return map[type] || type
+}
+
+export const getJobTypeLabel = (type) => {
+  const map = {
+    FULL_TIME: 'Toàn thời gian',
+    PART_TIME: 'Bán thời gian',
+    CONTRACT: 'Hợp đồng',
+    REMOTE: 'Làm từ xa',
+    INTERNSHIP: 'Thực tập',
+  }
+  return map[type] || type
+}
+
+export const getExperienceLevelLabel = (level) => {
+  const map = {
+    FRESHER: 'Fresher',
+    JUNIOR: 'Junior (1-2 năm)',
+    MID: 'Mid (2-4 năm)',
+    SENIOR: 'Senior (4+ năm)',
+    LEAD: 'Lead / Manager',
+  }
+  return map[level] || level
 }

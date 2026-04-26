@@ -30,22 +30,17 @@ export default function JobForm({ defaultValues, onSubmit, loading, submitLabel 
     }
   }, [defaultValues, reset])
 
-  // Sync preview khi user gõ URL tay
   const imageUrlValue = watch('imageUrl')
   useEffect(() => {
     setImagePreview(imageUrlValue || '')
   }, [imageUrlValue])
 
-  // Upload file → lấy URL → điền vào field imageUrl
   const handleFileChange = async (e) => {
     const file = e.target.files?.[0]
     if (!file) return
     setUploadError('')
-
-    // Preview local ngay lập tức
     const localUrl = URL.createObjectURL(file)
     setImagePreview(localUrl)
-
     setUploading(true)
     try {
       const res = await uploadJobImage(file)
@@ -59,7 +54,6 @@ export default function JobForm({ defaultValues, onSubmit, loading, submitLabel 
       setValue('imageUrl', '', { shouldDirty: true })
     } finally {
       setUploading(false)
-      // reset input để có thể chọn lại cùng file
       if (fileInputRef.current) fileInputRef.current.value = ''
     }
   }
@@ -77,7 +71,6 @@ export default function JobForm({ defaultValues, onSubmit, loading, submitLabel 
       Object.entries(data).map(([k, v]) => [k, v === '' ? undefined : v])
     )
     if (clean.categoryId) clean.categoryId = Number(clean.categoryId)
-    if (clean.salary)     clean.salary     = Number(clean.salary)
     if (clean.salaryMin)  clean.salaryMin  = Number(clean.salaryMin)
     if (clean.salaryMax)  clean.salaryMax  = Number(clean.salaryMax)
 
@@ -103,6 +96,19 @@ export default function JobForm({ defaultValues, onSubmit, loading, submitLabel 
           </FormField>
         </div>
 
+        {/* Company Name */}
+        <div className="col-span-2">
+          <FormField label="Tên công ty" error={errors.companyName?.message}>
+            <Input
+              placeholder="Ví dụ: Công ty Dược phẩm FreMed"
+              error={errors.companyName}
+              {...register('companyName', {
+                maxLength: { value: 200, message: 'Tối đa 200 ký tự' },
+              })}
+            />
+          </FormField>
+        </div>
+
         {/* Category */}
         <FormField label="Danh mục" required error={catError || errors.categoryId?.message}>
           <Select
@@ -120,7 +126,7 @@ export default function JobForm({ defaultValues, onSubmit, loading, submitLabel 
                       <option key={c.id} value={c.id}>{c.name}</option>
                     ))}
                     {categories.length === 0 && (
-                      <option disabled value="">Chưa có danh mục nào (tạo tại trang Danh mục)</option>
+                      <option disabled value="">Chưa có danh mục nào</option>
                     )}
                   </>
             }
@@ -133,6 +139,30 @@ export default function JobForm({ defaultValues, onSubmit, loading, submitLabel 
             <option value="">-- Chọn trạng thái --</option>
             <option value="ACTIVE">Đang tuyển (ACTIVE)</option>
             <option value="CLOSED">Đã đóng (CLOSED)</option>
+          </Select>
+        </FormField>
+
+        {/* Job Type */}
+        <FormField label="Hình thức làm việc" error={errors.jobType?.message}>
+          <Select error={errors.jobType} {...register('jobType')}>
+            <option value="">-- Chọn hình thức --</option>
+            <option value="FULL_TIME">Toàn thời gian</option>
+            <option value="PART_TIME">Bán thời gian</option>
+            <option value="CONTRACT">Hợp đồng</option>
+            <option value="REMOTE">Làm từ xa (Remote)</option>
+            <option value="INTERNSHIP">Thực tập</option>
+          </Select>
+        </FormField>
+
+        {/* Experience Level */}
+        <FormField label="Cấp độ kinh nghiệm" error={errors.experienceLevel?.message}>
+          <Select error={errors.experienceLevel} {...register('experienceLevel')}>
+            <option value="">-- Chọn cấp độ --</option>
+            <option value="FRESHER">Fresher (chưa có kinh nghiệm)</option>
+            <option value="JUNIOR">Junior (1-2 năm)</option>
+            <option value="MID">Mid-level (2-4 năm)</option>
+            <option value="SENIOR">Senior (4+ năm)</option>
+            <option value="LEAD">Lead / Manager</option>
           </Select>
         </FormField>
 
@@ -173,20 +203,33 @@ export default function JobForm({ defaultValues, onSubmit, loading, submitLabel 
           />
         </FormField>
 
+        {/* Contact Email — required, dùng job.contactEmail thay vì hardcode */}
+        <FormField label="Email liên hệ" required error={errors.contactEmail?.message}
+          hint="Email này hiển thị cho ứng viên để nộp hồ sơ">
+          <Input
+            type="email"
+            placeholder="Ví dụ: hr@company.com"
+            error={errors.contactEmail}
+            {...register('contactEmail', {
+              required: 'Email liên hệ không được để trống',
+              pattern: {
+                value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                message: 'Email không đúng định dạng',
+              },
+              maxLength: { value: 255, message: 'Tối đa 255 ký tự' },
+            })}
+          />
+        </FormField>
+
         {/* ExpiresAt */}
         <FormField label="Ngày hết hạn" error={errors.expiresAt?.message} hint="Phải là ngày trong tương lai">
           <Input type="date" error={errors.expiresAt} {...register('expiresAt')} />
         </FormField>
 
-        {/* Empty cell to keep grid aligned */}
-        <div />
-
-        {/* ===== IMAGE UPLOAD — full width ===== */}
+        {/* IMAGE UPLOAD — full width */}
         <div className="col-span-2">
-          <FormField label="Hình ảnh" error={uploadError || errors.imageUrl?.message}>
+          <FormField label="Hình ảnh (tuỳ chọn)" error={uploadError || errors.imageUrl?.message}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-
-              {/* Preview box */}
               <div
                 onClick={() => !uploading && fileInputRef.current?.click()}
                 style={{
@@ -222,7 +265,6 @@ export default function JobForm({ defaultValues, onSubmit, loading, submitLabel 
                       style={{ width: '100%', maxHeight: 280, objectFit: 'cover', display: 'block' }}
                       onError={(e) => { e.target.style.display = 'none' }}
                     />
-                    {/* Overlay khi hover */}
                     <div style={{
                       position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.45)',
                       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
@@ -244,7 +286,6 @@ export default function JobForm({ defaultValues, onSubmit, loading, submitLabel 
                 )}
               </div>
 
-              {/* Hidden file input */}
               <input
                 ref={fileInputRef}
                 type="file"
@@ -253,21 +294,15 @@ export default function JobForm({ defaultValues, onSubmit, loading, submitLabel 
                 onChange={handleFileChange}
               />
 
-              {/* URL input bên dưới */}
               <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                 <div style={{ flex: 1 }}>
                   <Input
-                    placeholder="Hoặc nhập URL ảnh trực tiếp: https://..."
+                    placeholder="Hoặc nhập URL ảnh: https://..."
                     error={errors.imageUrl}
                     {...register('imageUrl', { maxLength: { value: 500, message: 'Tối đa 500 ký tự' } })}
                   />
                 </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={uploading}
-                >
+                <Button type="button" variant="ghost" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
                   <UploadIcon small /> {uploading ? 'Đang up...' : 'Chọn file'}
                 </Button>
               </div>
@@ -279,7 +314,7 @@ export default function JobForm({ defaultValues, onSubmit, loading, submitLabel 
           </FormField>
         </div>
 
-        {/* Description — full width */}
+        {/* Description */}
         <div className="col-span-2">
           <FormField label="Mô tả công việc" error={errors.description?.message}>
             <Textarea
@@ -291,7 +326,7 @@ export default function JobForm({ defaultValues, onSubmit, loading, submitLabel 
           </FormField>
         </div>
 
-        {/* Requirements — full width */}
+        {/* Requirements */}
         <div className="col-span-2">
           <FormField label="Yêu cầu ứng viên" error={errors.requirements?.message}>
             <Textarea
@@ -303,7 +338,7 @@ export default function JobForm({ defaultValues, onSubmit, loading, submitLabel 
           </FormField>
         </div>
 
-        {/* Benefits — full width */}
+        {/* Benefits */}
         <div className="col-span-2">
           <FormField label="Quyền lợi" error={errors.benefits?.message}>
             <Textarea
@@ -329,7 +364,7 @@ export default function JobForm({ defaultValues, onSubmit, loading, submitLabel 
 }
 
 function UploadIcon({ muted, small }) {
-  const size = small ? 16 : 28
+  const size  = small ? 16 : 28
   const color = muted ? 'var(--text-mute)' : '#fff'
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

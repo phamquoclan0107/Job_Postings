@@ -2,26 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { jobService } from '../../services/jobService'
 import { useSavedJobs } from '../../hooks/useSavedJobs'
-import { formatDate, formatDateTime } from '../../utils/formatters'
-
-function formatSalaryRange(job) {
-  const { salary, salaryMin, salaryMax } = job || {}
-  if (salaryMin != null && salaryMax != null) {
-    return `${formatMillions(salaryMin)} - ${formatMillions(salaryMax)}`
-  }
-  if (salaryMin != null) return `Từ ${formatMillions(salaryMin)}`
-  if (salaryMax != null) return `Đến ${formatMillions(salaryMax)}`
-  if (salary != null) {
-    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(salary)
-  }
-  return 'Thỏa thuận'
-}
-
-function formatMillions(value) {
-  if (value == null) return '0'
-  const millions = Number(value) / 1_000_000
-  return millions % 1 === 0 ? `${millions}tr` : `${millions.toFixed(1)}tr`
-}
+import { formatDate, formatDateTime, formatSalaryRange, getJobTypeLabel, getExperienceLevelLabel } from '../../utils/formatters'
 
 export default function PublicJobDetailPage() {
   const { id }   = useParams()
@@ -49,9 +30,10 @@ export default function PublicJobDetailPage() {
   if (error)   return <ErrorState message={error} onBack={() => navigate('/jobs')} />
   if (!job)    return null
 
-  const applyEmail = `talents@fremed.com.vn`
-  const subject = encodeURIComponent(`Ứng tuyển: ${job.title}`)
-  const mailtoHref = `mailto:${applyEmail}?subject=${subject}`
+  // Dùng job.contactEmail từ backend — không hardcode
+  const applyEmail  = job.contactEmail || ''
+  const subject     = encodeURIComponent(`Ứng tuyển: ${job.title}`)
+  const mailtoHref  = applyEmail ? `mailto:${applyEmail}?subject=${subject}` : '#'
   const salaryDisplay = formatSalaryRange(job)
 
   return (
@@ -70,7 +52,6 @@ export default function PublicJobDetailPage() {
         <div style={{ flex: 1, minWidth: 0 }}>
           {/* Header Card */}
           <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: 28, marginBottom: 20 }}>
-            {/* Ảnh responsive */}
             {job.imageUrl && (
               <div style={{ marginBottom: 20, borderRadius: 12, overflow: 'hidden' }}>
                 <img
@@ -88,20 +69,33 @@ export default function PublicJobDetailPage() {
                 </div>
               )}
               <div style={{ flex: 1, minWidth: 0 }}>
-                <h1 style={{ fontSize: 22, fontWeight: 800, color: '#1a2340', margin: '0 0 6px' }}>{job.title}</h1>
+                <h1 style={{ fontSize: 22, fontWeight: 800, color: '#1a2340', margin: '0 0 4px' }}>{job.title}</h1>
+                {job.companyName && (
+                  <div style={{ fontSize: 15, fontWeight: 600, color: '#374151', marginBottom: 6 }}>{job.companyName}</div>
+                )}
                 <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 13, color: '#6b7280' }}>
                   <span>🏷 {job.categoryName}</span>
                   {job.location && <span>📍 {job.location}</span>}
                   {job.expiresAt && <span>⏰ Hết hạn: {formatDate(job.expiresAt)}</span>}
                   {job.postedAt && <span>📅 Đăng: {formatDateTime(job.postedAt)}</span>}
                 </div>
-                <div style={{ marginTop: 12, display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+                <div style={{ marginTop: 12, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
                   <span style={{ background: '#f0fdf4', color: '#1a7a4a', fontSize: 13, fontWeight: 700, padding: '4px 14px', borderRadius: 20, border: '1px solid #bbf7d0' }}>
                     💰 {salaryDisplay}
                   </span>
                   {job.salaryType && (
                     <span style={{ background: '#f3f4f6', color: '#374151', fontSize: 12, fontWeight: 500, padding: '4px 12px', borderRadius: 20 }}>
                       {job.salaryType}
+                    </span>
+                  )}
+                  {job.jobType && (
+                    <span style={{ background: '#eff6ff', color: '#1d4ed8', fontSize: 12, fontWeight: 500, padding: '4px 12px', borderRadius: 20 }}>
+                      {getJobTypeLabel(job.jobType)}
+                    </span>
+                  )}
+                  {job.experienceLevel && (
+                    <span style={{ background: '#faf5ff', color: '#7e22ce', fontSize: 12, fontWeight: 500, padding: '4px 12px', borderRadius: 20 }}>
+                      {getExperienceLevelLabel(job.experienceLevel)}
                     </span>
                   )}
                   <span style={{ background: job.status === 'ACTIVE' ? '#f0fdf4' : '#f3f4f6', color: job.status === 'ACTIVE' ? '#1a7a4a' : '#6b7280', fontSize: 12, fontWeight: 600, padding: '4px 12px', borderRadius: 20 }}>
@@ -115,21 +109,19 @@ export default function PublicJobDetailPage() {
           {/* Description */}
           <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: 28, marginBottom: 20 }}>
             <SectionTitle>MÔ TẢ CÔNG VIỆC</SectionTitle>
-            {job.description ? (
-              <div style={{ fontSize: 14, lineHeight: 1.8, color: '#374151', whiteSpace: 'pre-wrap' }}>{job.description}</div>
-            ) : (
-              <p style={{ color: '#9ca3af', fontStyle: 'italic', fontSize: 14 }}>Chưa có mô tả chi tiết.</p>
-            )}
+            {job.description
+              ? <div style={{ fontSize: 14, lineHeight: 1.8, color: '#374151', whiteSpace: 'pre-wrap' }}>{job.description}</div>
+              : <p style={{ color: '#9ca3af', fontStyle: 'italic', fontSize: 14 }}>Chưa có mô tả chi tiết.</p>
+            }
           </div>
 
           {/* Requirements */}
           <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: 28, marginBottom: 20 }}>
             <SectionTitle>YÊU CẦU ỨNG VIÊN</SectionTitle>
-            {job.requirements ? (
-              <div style={{ fontSize: 14, lineHeight: 1.8, color: '#374151', whiteSpace: 'pre-wrap' }}>{job.requirements}</div>
-            ) : (
-              <p style={{ color: '#9ca3af', fontStyle: 'italic', fontSize: 14 }}>Vui lòng liên hệ để biết thêm chi tiết về yêu cầu ứng viên.</p>
-            )}
+            {job.requirements
+              ? <div style={{ fontSize: 14, lineHeight: 1.8, color: '#374151', whiteSpace: 'pre-wrap' }}>{job.requirements}</div>
+              : <p style={{ color: '#9ca3af', fontStyle: 'italic', fontSize: 14 }}>Vui lòng liên hệ để biết thêm chi tiết.</p>
+            }
           </div>
 
           {/* Benefits */}
@@ -147,11 +139,19 @@ export default function PublicJobDetailPage() {
             <h3 style={{ fontWeight: 700, color: '#1a2340', fontSize: 16, textAlign: 'center', marginBottom: 16 }}>
               BẠN HỨNG THÚ VỚI VỊ TRÍ NÀY?
             </h3>
-            <a href={mailtoHref}
-              style={{ display: 'block', width: '100%', background: '#1a7a4a', color: '#fff', padding: '14px 16px', borderRadius: 10, textAlign: 'center', fontWeight: 700, fontSize: 14, textDecoration: 'none', boxSizing: 'border-box', marginBottom: 16 }}>
-              Gửi hồ sơ đến<br />
-              <span style={{ fontSize: 12, fontWeight: 500, opacity: 0.9 }}>talents@fremed.com.vn</span>
-            </a>
+
+            {applyEmail ? (
+              <a href={mailtoHref}
+                style={{ display: 'block', width: '100%', background: '#1a7a4a', color: '#fff', padding: '14px 16px', borderRadius: 10, textAlign: 'center', fontWeight: 700, fontSize: 14, textDecoration: 'none', boxSizing: 'border-box', marginBottom: 12 }}>
+                Gửi hồ sơ đến<br />
+                <span style={{ fontSize: 12, fontWeight: 500, opacity: 0.9 }}>{applyEmail}</span>
+              </a>
+            ) : (
+              <p style={{ textAlign: 'center', color: '#9ca3af', fontSize: 13, marginBottom: 12 }}>
+                Chưa có email liên hệ
+              </p>
+            )}
+
             <button
               onClick={() => toggle(Number(id))}
               style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: '12px', border: '1px solid #e5e7eb', borderRadius: 10, background: 'none', cursor: 'pointer', fontSize: 13, color: '#374151', fontWeight: 500 }}>
@@ -164,10 +164,12 @@ export default function PublicJobDetailPage() {
             <InfoRow label="Khoảng lương">
               <strong style={{ color: '#1a7a4a' }}>{salaryDisplay}</strong>
             </InfoRow>
-            {job.salaryType && <InfoRow label="Loại lương">{job.salaryType}</InfoRow>}
-            {job.location && <InfoRow label="Địa điểm">{job.location}</InfoRow>}
-            {job.expiresAt && <InfoRow label="Hạn nộp">{formatDate(job.expiresAt)}</InfoRow>}
-            {job.postedAt && <InfoRow label="Ngày đăng">{formatDate(job.postedAt)}</InfoRow>}
+            {job.salaryType     && <InfoRow label="Loại lương">{job.salaryType}</InfoRow>}
+            {job.jobType        && <InfoRow label="Hình thức">{getJobTypeLabel(job.jobType)}</InfoRow>}
+            {job.experienceLevel && <InfoRow label="Kinh nghiệm">{getExperienceLevelLabel(job.experienceLevel)}</InfoRow>}
+            {job.location       && <InfoRow label="Địa điểm">{job.location}</InfoRow>}
+            {job.expiresAt      && <InfoRow label="Hạn nộp">{formatDate(job.expiresAt)}</InfoRow>}
+            {job.postedAt       && <InfoRow label="Ngày đăng">{formatDate(job.postedAt)}</InfoRow>}
             <InfoRow label="Trạng thái">
               <span style={{ color: job.status === 'ACTIVE' ? '#1a7a4a' : '#6b7280' }}>
                 {job.status === 'ACTIVE' ? 'Đang tuyển' : 'Đã đóng'}
@@ -194,7 +196,8 @@ export default function PublicJobDetailPage() {
                   <img src={j.imageUrl} alt="" style={{ width: '100%', height: 80, objectFit: 'cover', borderRadius: 8, marginBottom: 10 }}
                     onError={(e) => e.target.style.display = 'none'} />
                 )}
-                <div style={{ fontWeight: 600, fontSize: 14, color: '#1a2340', marginBottom: 6 }}>{j.title}</div>
+                <div style={{ fontWeight: 600, fontSize: 14, color: '#1a2340', marginBottom: 4 }}>{j.title}</div>
+                {j.companyName && <div style={{ fontSize: 12, color: '#374151', marginBottom: 4 }}>{j.companyName}</div>}
                 <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 8 }}>{j.location || '—'}</div>
                 <div style={{ color: '#1a7a4a', fontWeight: 700, fontSize: 13 }}>{formatSalaryRange(j)}</div>
               </div>
