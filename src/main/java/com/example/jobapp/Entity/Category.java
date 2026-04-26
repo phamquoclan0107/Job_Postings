@@ -22,7 +22,7 @@ public class Category {
     private String name;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "type", nullable = false, columnDefinition = "ENUM('JOB','PRODUCT')")
+    @Column(name = "type", nullable = false, columnDefinition = "ENUM('job','product')")
     private CategoryType type;
 
     @CreationTimestamp
@@ -37,6 +37,6 @@ public class Category {
 
     // ✅ FIX: Uppercase theo yêu cầu
     public enum CategoryType {
-        JOB, PRODUCT
+        job, product
     }
 }
