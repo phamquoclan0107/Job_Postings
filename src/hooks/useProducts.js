@@ -1,20 +1,16 @@
-// src/hooks/useJobs.js
+// src/hooks/useProducts.js
 import { useState, useEffect, useCallback } from 'react'
-import { jobService } from '../services/jobService'
+import { productService } from '../services/productService'
 
 const DEFAULT_PARAMS = {
-  keyword:    '',
-  location:   '',
-  salaryMin:  '',
-  salaryMax:  '',
   categoryId: '',
-  status:     '',
+  isActive:   '',
   page:       0,
-  size:       9,
+  size:       12,
   sort:       'createdAt,desc',
 }
 
-export function useJobs(initialParams = {}) {
+export function useProducts(initialParams = {}) {
   const [params, setParams]   = useState({ ...DEFAULT_PARAMS, ...initialParams })
   const [data, setData]       = useState(null)
   const [loading, setLoading] = useState(false)
@@ -28,10 +24,10 @@ export function useJobs(initialParams = {}) {
       const clean = Object.fromEntries(
         Object.entries(current).filter(([, v]) => v !== '' && v !== null && v !== undefined)
       )
-      const page = await jobService.search(clean)
+      const page = await productService.search(clean)
       setData(page)
     } catch (err) {
-      setError(err?.response?.data?.message || err?.message || 'Lỗi tải danh sách job')
+      setError(err?.response?.data?.message || err?.message || 'Lỗi tải sản phẩm')
     } finally {
       setLoading(false)
     }

@@ -1,4 +1,3 @@
-// src/pages/JobListPage.jsx
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useJobs } from '../hooks/useJobs'
@@ -8,19 +7,35 @@ import {
   PageTitle, Card, Button, Badge, Spinner, EmptyState,
   Pagination, ConfirmModal, Select,
 } from '../components/ui'
-import { formatDate, formatSalary, getStatusLabel, getStatusColor } from '../utils/formatters'
+import { formatDate, getStatusLabel, getStatusColor } from '../utils/formatters'
 import toast from 'react-hot-toast'
+
+function formatSalaryRange(job) {
+  const { salary, salaryMin, salaryMax } = job || {}
+  if (salaryMin != null && salaryMax != null) {
+    return `${formatMillions(salaryMin)} - ${formatMillions(salaryMax)}`
+  }
+  if (salaryMin != null) return `Từ ${formatMillions(salaryMin)}`
+  if (salaryMax != null) return `Đến ${formatMillions(salaryMax)}`
+  if (salary != null) {
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(salary)
+  }
+  return 'Thỏa thuận'
+}
+
+function formatMillions(value) {
+  if (value == null) return '0'
+  const millions = Number(value) / 1_000_000
+  return millions % 1 === 0 ? `${millions}tr` : `${millions.toFixed(1)}tr`
+}
 
 export default function JobListPage() {
   const navigate = useNavigate()
   const { data, loading, error, params, updateParams, setPage, refetch } = useJobs()
   const { categories } = useCategories('JOB')
-
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [deleting, setDeleting]         = useState(false)
-
-  // local search state (commit on Enter or blur)
-  const [titleInput, setTitleInput] = useState('')
+  const [titleInput, setTitleInput]     = useState('')
 
   const handleSearch = () => updateParams({ title: titleInput })
   const handleKeyDown = (e) => { if (e.key === 'Enter') handleSearch() }
@@ -35,9 +50,7 @@ export default function JobListPage() {
       refetch(params)
     } catch (err) {
       toast.error(err?.response?.data?.message || 'Xóa thất bại')
-    } finally {
-      setDeleting(false)
-    }
+    } finally { setDeleting(false) }
   }
 
   const jobs    = data?.content || []
@@ -51,56 +64,38 @@ export default function JobListPage() {
         title="Tin tuyển dụng"
         subtitle={`${total} vị trí`}
         action={
-          <Button onClick={() => navigate('/jobs/create')}>
+          <Button onClick={() => navigate('/admin/jobs/create')}>
             <PlusIcon /> Tạo tin mới
           </Button>
         }
       />
 
-      {/* ── Filters ─────────────────────────────── */}
-      <Card style={{ marginBottom: 20, padding: '16px 20px' }}>
-        <div style={filterRow}>
-          {/* Search */}
-          <div style={{ position: 'relative', flex: '1 1 240px' }}>
-            <SearchIcon style={searchIconStyle} />
+      {/* Filters */}
+      <Card className="mb-5 px-5 py-4">
+        <div className="flex flex-wrap gap-2.5 items-center">
+          <div className="relative flex-1 min-w-[240px]">
+            <SearchIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-mute pointer-events-none" />
             <input
               value={titleInput}
               onChange={(e) => setTitleInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Tìm theo tiêu đề... (Enter)"
-              style={searchInput}
+              className="w-full pl-9 pr-3 py-[9px] bg-bg border border-border rounded-[6px] text-text-pri text-sm outline-none"
             />
           </div>
 
-          {/* Category filter */}
-          <Select
-            value={params.categoryId || ''}
-            onChange={(e) => updateParams({ categoryId: e.target.value || '' })}
-            style={{ flex: '0 0 180px' }}
-          >
+          <Select value={params.categoryId || ''} onChange={(e) => updateParams({ categoryId: e.target.value || '' })} className="flex-none w-[180px]">
             <option value="">Tất cả danh mục</option>
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>{c.name}</option>
-            ))}
+            {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
           </Select>
 
-          {/* Status filter */}
-          <Select
-            value={params.status || ''}
-            onChange={(e) => updateParams({ status: e.target.value || '' })}
-            style={{ flex: '0 0 150px' }}
-          >
+          <Select value={params.status || ''} onChange={(e) => updateParams({ status: e.target.value || '' })} className="flex-none w-[150px]">
             <option value="">Tất cả trạng thái</option>
             <option value="ACTIVE">Đang tuyển</option>
             <option value="CLOSED">Đã đóng</option>
           </Select>
 
-          {/* Sort */}
-          <Select
-            value={params.sort || 'createdAt,desc'}
-            onChange={(e) => updateParams({ sort: e.target.value })}
-            style={{ flex: '0 0 180px' }}
-          >
+          <Select value={params.sort || 'createdAt,desc'} onChange={(e) => updateParams({ sort: e.target.value })} className="flex-none w-[180px]">
             <option value="createdAt,desc">Mới nhất trước</option>
             <option value="createdAt,asc">Cũ nhất trước</option>
             <option value="title,asc">Tiêu đề A→Z</option>
@@ -115,65 +110,64 @@ export default function JobListPage() {
         </div>
       </Card>
 
-      {/* ── Table ───────────────────────────────── */}
+      {/* Table */}
       <Card>
         {loading ? (
-          <div style={centerStyle}><Spinner size={32} /></div>
+          <div className="flex justify-center items-center py-16"><Spinner size={32} /></div>
         ) : error ? (
-          <div style={{ ...centerStyle, color: 'var(--red)', fontSize: 14 }}>{error}</div>
+          <div className="flex justify-center items-center py-16 text-red text-sm">{error}</div>
         ) : jobs.length === 0 ? (
           <EmptyState message="Không tìm thấy tin tuyển dụng nào" />
         ) : (
           <>
-            <div style={{ overflowX: 'auto' }}>
-              <table style={tableStyle}>
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse">
                 <thead>
                   <tr>
-                    {['ID', 'Tiêu đề', 'Danh mục', 'Lương', 'Địa điểm', 'Trạng thái', 'Hết hạn', 'Ngày tạo', ''].map((h) => (
-                      <th key={h} style={thStyle}>{h}</th>
+                    {['ID', 'Tiêu đề', 'Danh mục', 'Khoảng lương', 'Loại lương', 'Địa điểm', 'Trạng thái', 'Hết hạn', 'Ngày tạo', ''].map((h) => (
+                      <th key={h} className="px-4 py-3 text-left text-[11px] font-bold text-text-mute uppercase tracking-[0.06em] border-b border-border whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {jobs.map((job) => (
-                    <tr key={job.id} style={trStyle} onClick={() => navigate(`/jobs/${job.id}`)}>
-                      <td style={tdStyle}>
-                        <span style={{ color: 'var(--text-mute)', fontFamily: 'monospace', fontSize: 12 }}>#{job.id}</span>
+                    <tr key={job.id} className="cursor-pointer hover:bg-bg-hover transition-colors duration-[120ms]"
+                      onClick={() => navigate(`/admin/jobs/${job.id}`)}>
+                      <td className="px-4 py-3.5 border-b border-border align-middle">
+                        <span className="text-text-mute font-mono text-xs">#{job.id}</span>
                       </td>
-                      <td style={{ ...tdStyle, maxWidth: 220 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <td className="px-4 py-3.5 border-b border-border align-middle max-w-[220px]">
+                        <div className="flex items-center gap-2.5">
                           {job.imageUrl ? (
-                            <img src={job.imageUrl} alt="" style={thumbStyle} onError={(e) => { e.target.style.display = 'none' }} />
+                            <img src={job.imageUrl} alt="" className="w-8 h-8 rounded-[6px] object-cover flex-shrink-0"
+                              onError={(e) => { e.target.style.display = 'none' }} />
                           ) : (
-                            <div style={thumbPlaceholder}><BriefcaseSmall /></div>
+                            <div className="w-8 h-8 rounded-[6px] bg-bg-hover flex items-center justify-center flex-shrink-0 text-text-mute">
+                              <BriefcaseSmall />
+                            </div>
                           )}
-                          <span style={{ fontWeight: 500, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {job.title}
-                          </span>
+                          <span className="font-medium text-[13px] overflow-hidden text-ellipsis whitespace-nowrap">{job.title}</span>
                         </div>
                       </td>
-                      <td style={tdStyle}>
-                        <span style={{ fontSize: 12, color: 'var(--text-sec)', background: 'var(--bg-hover)', padding: '3px 8px', borderRadius: 4 }}>
-                          {job.categoryName || '—'}
-                        </span>
+                      <td className="px-4 py-3.5 border-b border-border align-middle">
+                        <span className="text-xs text-text-sec bg-bg-hover px-2 py-0.5 rounded">{job.categoryName || '—'}</span>
                       </td>
-                      <td style={{ ...tdStyle, fontSize: 13 }}>{formatSalary(job.salary)}</td>
-                      <td style={{ ...tdStyle, fontSize: 13, color: 'var(--text-sec)' }}>{job.location || '—'}</td>
-                      <td style={tdStyle}>
-                        <Badge color={getStatusColor(job.status)}>
-                          {getStatusLabel(job.status)}
-                        </Badge>
+                      <td className="px-4 py-3.5 border-b border-border align-middle text-[13px] font-medium" style={{ color: '#1a7a4a' }}>
+                        {formatSalaryRange(job)}
                       </td>
-                      <td style={{ ...tdStyle, fontSize: 13, color: 'var(--text-sec)' }}>{formatDate(job.expiresAt)}</td>
-                      <td style={{ ...tdStyle, fontSize: 12, color: 'var(--text-mute)' }}>{formatDate(job.createdAt)}</td>
-                      <td style={tdStyle} onClick={(e) => e.stopPropagation()}>
-                        <div style={{ display: 'flex', gap: 6 }}>
-                          <Button size="sm" variant="ghost" onClick={() => navigate(`/jobs/${job.id}/edit`)}>
-                            <EditIcon />
-                          </Button>
-                          <Button size="sm" variant="danger" onClick={() => setDeleteTarget(job)}>
-                            <TrashIcon />
-                          </Button>
+                      <td className="px-4 py-3.5 border-b border-border align-middle text-[12px] text-text-sec">
+                        {job.salaryType || '—'}
+                      </td>
+                      <td className="px-4 py-3.5 border-b border-border align-middle text-[13px] text-text-sec">{job.location || '—'}</td>
+                      <td className="px-4 py-3.5 border-b border-border align-middle">
+                        <Badge color={getStatusColor(job.status)}>{getStatusLabel(job.status)}</Badge>
+                      </td>
+                      <td className="px-4 py-3.5 border-b border-border align-middle text-[13px] text-text-sec">{formatDate(job.expiresAt)}</td>
+                      <td className="px-4 py-3.5 border-b border-border align-middle text-xs text-text-mute">{formatDate(job.createdAt)}</td>
+                      <td className="px-4 py-3.5 border-b border-border align-middle" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex gap-1.5">
+                          <Button size="sm" variant="ghost" onClick={() => navigate(`/admin/jobs/${job.id}/edit`)}><EditIcon /></Button>
+                          <Button size="sm" variant="danger" onClick={() => setDeleteTarget(job)}><TrashIcon /></Button>
                         </div>
                       </td>
                     </tr>
@@ -181,14 +175,7 @@ export default function JobListPage() {
                 </tbody>
               </table>
             </div>
-
-            <Pagination
-              page={curPage}
-              totalPages={totPg}
-              totalElements={total}
-              size={params.size}
-              onPageChange={setPage}
-            />
+            <Pagination page={curPage} totalPages={totPg} totalElements={total} size={params.size} onPageChange={setPage} />
           </>
         )}
       </Card>
@@ -205,27 +192,6 @@ export default function JobListPage() {
   )
 }
 
-/* ── Styles ──────────────────────────────────────────────── */
-const filterRow  = { display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center' }
-const searchInput = {
-  width: '100%', padding: '9px 12px 9px 36px',
-  background: 'var(--bg)', border: '1px solid var(--border)',
-  borderRadius: 6, color: 'var(--text-pri)', fontSize: 14,
-  outline: 'none',
-}
-const searchIconStyle = {
-  position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)',
-  color: 'var(--text-mute)', pointerEvents: 'none',
-}
-const centerStyle   = { display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '60px 20px' }
-const tableStyle    = { width: '100%', borderCollapse: 'collapse' }
-const thStyle       = { padding: '12px 16px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: 'var(--text-mute)', textTransform: 'uppercase', letterSpacing: '0.06em', borderBottom: '1px solid var(--border)', whiteSpace: 'nowrap' }
-const tdStyle       = { padding: '14px 16px', fontSize: 14, color: 'var(--text-pri)', borderBottom: '1px solid var(--border)', verticalAlign: 'middle' }
-const trStyle       = { cursor: 'pointer', transition: 'background 0.12s' }
-const thumbStyle    = { width: 32, height: 32, borderRadius: 6, objectFit: 'cover', flexShrink: 0 }
-const thumbPlaceholder = { width: 32, height: 32, borderRadius: 6, background: 'var(--bg-hover)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: 'var(--text-mute)' }
-
-/* ── Icons ─────────────────────────────────────────────── */
 function PlusIcon()       { return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> }
 function SearchIcon(p)    { return <svg {...p} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> }
 function EditIcon()       { return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4z"/></svg> }

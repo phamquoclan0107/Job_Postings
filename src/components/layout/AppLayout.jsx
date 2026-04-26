@@ -5,8 +5,9 @@ import { useAuth } from '../../hooks/useAuth'
 import toast from 'react-hot-toast'
 
 const NAV = [
-  { to: '/jobs',       label: 'Tin tuyển dụng', icon: BriefcaseIcon },
-  { to: '/categories', label: 'Danh mục',        icon: TagIcon },
+  { to: '/admin/jobs',       label: 'Tin tuyển dụng', icon: BriefcaseIcon },
+  { to: '/admin/categories', label: 'Danh mục',        icon: TagIcon },
+  { to: '/admin/products', label: 'Sản phẩm', icon: TagIcon },
 ]
 
 function BriefcaseIcon() {
@@ -43,168 +44,73 @@ export default function AppLayout() {
   }
 
   return (
-    <div style={styles.shell}>
+    <div className="flex min-h-screen bg-bg">
       {/* Sidebar */}
-      <aside style={{ ...styles.sidebar, width: collapsed ? 64 : 220 }}>
-        <div style={styles.logo} onClick={() => setCollapsed((v) => !v)}>
-          {collapsed ? (
-            <span style={styles.logoMark}>J</span>
-          ) : (
-            <>
-              <span style={styles.logoMark}>J</span>
-              <span style={styles.logoText}>JobAdmin</span>
-            </>
+      <aside
+        className="flex flex-col bg-bg-card border-r border-border transition-[width] duration-200 overflow-hidden flex-shrink-0 sticky top-0 h-screen"
+        style={{ width: collapsed ? 64 : 220 }}
+      >
+        {/* Logo */}
+        <div
+          className="flex items-center gap-2.5 px-4 pt-6 pb-5 cursor-pointer select-none"
+          onClick={() => setCollapsed((v) => !v)}
+        >
+          <div className="w-8 h-8 rounded-lg bg-accent text-black flex items-center justify-center font-head font-extrabold text-[18px] flex-shrink-0">
+            J
+          </div>
+          {!collapsed && (
+            <span className="font-head font-bold text-[18px] text-text-pri whitespace-nowrap">JobAdmin</span>
           )}
         </div>
 
-        <nav style={styles.nav}>
+        {/* Nav */}
+        <nav className="flex flex-col gap-0.5 px-2 flex-1">
           {NAV.map(({ to, label, icon: Icon }) => (
             <NavLink
               key={to}
               to={to}
-              style={({ isActive }) => ({
-                ...styles.navItem,
-                background: isActive ? 'var(--accent-dim)' : 'transparent',
-                color:      isActive ? 'var(--accent)' : 'var(--text-sec)',
-                borderLeft: isActive ? '2px solid var(--accent)' : '2px solid transparent',
-              })}
+              className={({ isActive }) =>
+                `flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-[180ms] whitespace-nowrap border-l-2 ${
+                  isActive
+                    ? 'bg-accent-dim text-accent border-accent'
+                    : 'bg-transparent text-text-sec border-transparent hover:bg-bg-hover'
+                }`
+              }
             >
               <Icon />
-              {!collapsed && <span style={{ marginLeft: 10 }}>{label}</span>}
+              {!collapsed && <span className="ml-2.5">{label}</span>}
             </NavLink>
           ))}
         </nav>
 
-        <div style={styles.sidebarBottom}>
+        {/* Bottom */}
+        <div className="px-2 pb-4 pt-3 border-t border-border">
           {!collapsed && admin && (
-            <div style={styles.adminInfo}>
-              <div style={styles.adminAvatar}>{admin.username?.[0]?.toUpperCase()}</div>
+            <div className="flex items-center gap-2.5 px-2.5 pb-3">
+              <div className="w-8 h-8 rounded-lg bg-border-light text-text-pri flex items-center justify-center font-bold text-sm flex-shrink-0">
+                {admin.username?.[0]?.toUpperCase()}
+              </div>
               <div>
-                <div style={{ fontSize: 13, fontWeight: 600 }}>{admin.username}</div>
-                <div style={{ fontSize: 11, color: 'var(--text-mute)' }}>{admin.email || 'Admin'}</div>
+                <div className="text-[13px] font-semibold">{admin.username}</div>
+                <div className="text-[11px] text-text-mute">{admin.email || 'Admin'}</div>
               </div>
             </div>
           )}
-          <button style={styles.logoutBtn} onClick={handleLogout} title="Đăng xuất">
+          <button
+            className="flex items-center w-full px-3 py-[9px] rounded-lg bg-transparent border-0 text-text-sec text-sm font-medium transition-all duration-[180ms] whitespace-nowrap hover:bg-bg-hover"
+            onClick={handleLogout}
+            title="Đăng xuất"
+          >
             <LogoutIcon />
-            {!collapsed && <span style={{ marginLeft: 8 }}>Đăng xuất</span>}
+            {!collapsed && <span className="ml-2">Đăng xuất</span>}
           </button>
         </div>
       </aside>
 
       {/* Main */}
-      <main style={styles.main}>
+      <main className="flex-1 overflow-auto p-8 min-w-0">
         <Outlet />
       </main>
     </div>
   )
-}
-
-const styles = {
-  shell: {
-    display: 'flex',
-    minHeight: '100vh',
-    background: 'var(--bg)',
-  },
-  sidebar: {
-    display: 'flex',
-    flexDirection: 'column',
-    background: 'var(--bg-card)',
-    borderRight: '1px solid var(--border)',
-    transition: 'width 0.2s ease',
-    overflow: 'hidden',
-    flexShrink: 0,
-    position: 'sticky',
-    top: 0,
-    height: '100vh',
-  },
-  logo: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 10,
-    padding: '24px 16px 20px',
-    cursor: 'pointer',
-    userSelect: 'none',
-  },
-  logoMark: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    background: 'var(--accent)',
-    color: '#000',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontFamily: 'var(--font-head)',
-    fontWeight: 800,
-    fontSize: 18,
-    flexShrink: 0,
-  },
-  logoText: {
-    fontFamily: 'var(--font-head)',
-    fontWeight: 700,
-    fontSize: 18,
-    color: 'var(--text-pri)',
-    whiteSpace: 'nowrap',
-  },
-  nav: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 2,
-    padding: '0 8px',
-    flex: 1,
-  },
-  navItem: {
-    display: 'flex',
-    alignItems: 'center',
-    padding: '10px 12px',
-    borderRadius: 8,
-    fontSize: 14,
-    fontWeight: 500,
-    transition: 'var(--transition)',
-    whiteSpace: 'nowrap',
-  },
-  sidebarBottom: {
-    padding: '12px 8px 16px',
-    borderTop: '1px solid var(--border)',
-  },
-  adminInfo: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 10,
-    padding: '8px 10px 12px',
-  },
-  adminAvatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    background: 'var(--border-light)',
-    color: 'var(--text-pri)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontWeight: 700,
-    fontSize: 14,
-    flexShrink: 0,
-  },
-  logoutBtn: {
-    display: 'flex',
-    alignItems: 'center',
-    width: '100%',
-    padding: '9px 12px',
-    borderRadius: 8,
-    background: 'transparent',
-    border: 'none',
-    color: 'var(--text-sec)',
-    fontSize: 14,
-    fontWeight: 500,
-    transition: 'var(--transition)',
-    whiteSpace: 'nowrap',
-  },
-  main: {
-    flex: 1,
-    overflow: 'auto',
-    padding: '32px 36px',
-    minWidth: 0,
-  },
 }

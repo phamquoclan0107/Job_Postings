@@ -1,5 +1,5 @@
 // src/hooks/useCategories.js
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { categoryService } from '../services/categoryService'
 
 /**
@@ -10,20 +10,23 @@ export function useCategories(type) {
   const [loading, setLoading]       = useState(false)
   const [error, setError]           = useState(null)
 
-  const fetch = async () => {
+  const fetch = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
       const data = await categoryService.getAll(type)
-      setCategories(data)
+      // Đảm bảo luôn là array dù API trả về null/undefined
+      setCategories(Array.isArray(data) ? data : [])
     } catch (err) {
-      setError(err?.response?.data?.message || 'Lỗi tải danh mục')
+      const msg = err?.response?.data?.message || err?.message || 'Không thể tải danh mục'
+      setError(msg)
+      setCategories([])
     } finally {
       setLoading(false)
     }
-  }
+  }, [type])
 
-  useEffect(() => { fetch() }, [type])
+  useEffect(() => { fetch() }, [fetch])
 
   return { categories, loading, error, refetch: fetch }
 }
