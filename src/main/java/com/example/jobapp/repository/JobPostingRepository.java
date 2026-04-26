@@ -23,9 +23,13 @@ public interface JobPostingRepository extends JpaRepository<JobPosting, Integer>
             "JOIN FETCH j.category c " +
             "JOIN FETCH j.admin a " +
             "WHERE j.deletedAt IS NULL " +
-            "AND j.status = com.example.jobapp.Entity.JobPosting.JobStatus.ACTIVE " +
+            "AND j.status = :status " +
             "ORDER BY j.createdAt DESC")
-    List<JobPosting> findAllActive();
+    List<JobPosting> findAllActive(@Param("status") JobStatus status);
+
+    default List<JobPosting> findAllActive() {
+        return findAllActive(JobStatus.ACTIVE);
+    }
 
     @Query(value = "SELECT j FROM JobPosting j " +
             "JOIN FETCH j.category c " +
@@ -34,8 +38,8 @@ public interface JobPostingRepository extends JpaRepository<JobPosting, Integer>
             "AND (:keyword IS NULL OR LOWER(j.title) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
             "     OR LOWER(j.description) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
             "AND (:location IS NULL OR LOWER(j.location) LIKE LOWER(CONCAT('%', :location, '%'))) " +
-            "AND (:salaryMin IS NULL OR j.salary >= :salaryMin) " +
-            "AND (:salaryMax IS NULL OR j.salary <= :salaryMax) " +
+            "AND (:salaryMin IS NULL OR j.salaryMin >= :salaryMin) " +
+            "AND (:salaryMax IS NULL OR j.salaryMax <= :salaryMax) " +
             "AND (:categoryId IS NULL OR c.id = :categoryId) " +
             "AND (:status IS NULL OR j.status = :status)",
             countQuery = "SELECT COUNT(j) FROM JobPosting j " +
@@ -43,8 +47,8 @@ public interface JobPostingRepository extends JpaRepository<JobPosting, Integer>
                     "AND (:keyword IS NULL OR LOWER(j.title) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
                     "     OR LOWER(j.description) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
                     "AND (:location IS NULL OR LOWER(j.location) LIKE LOWER(CONCAT('%', :location, '%'))) " +
-                    "AND (:salaryMin IS NULL OR j.salary >= :salaryMin) " +
-                    "AND (:salaryMax IS NULL OR j.salary <= :salaryMax) " +
+                    "AND (:salaryMin IS NULL OR j.salaryMin >= :salaryMin) " +
+                    "AND (:salaryMax IS NULL OR j.salaryMax <= :salaryMax) " +
                     "AND (:categoryId IS NULL OR j.category.id = :categoryId) " +
                     "AND (:status IS NULL OR j.status = :status)")
     Page<JobPosting> search(
@@ -67,32 +71,53 @@ public interface JobPostingRepository extends JpaRepository<JobPosting, Integer>
             "JOIN FETCH j.category c " +
             "JOIN FETCH j.admin a " +
             "WHERE j.deletedAt IS NULL " +
-            "AND j.status = com.example.jobapp.Entity.JobPosting.JobStatus.ACTIVE " +
+            "AND j.status = :status " +
             "AND j.category.id = :categoryId " +
             "AND j.id <> :excludeId " +
             "ORDER BY j.createdAt DESC")
     List<JobPosting> findSimilar(
             @Param("categoryId") Integer categoryId,
             @Param("excludeId")  Integer excludeId,
+            @Param("status")     JobStatus status,
             Pageable pageable
     );
 
+    default List<JobPosting> findSimilar(Integer categoryId, Integer excludeId, Pageable pageable) {
+        return findSimilar(categoryId, excludeId, JobStatus.ACTIVE, pageable);
+    }
+
     @Query("SELECT j FROM JobPosting j " +
             "WHERE j.deletedAt IS NULL " +
-            "AND j.status = com.example.jobapp.Entity.JobPosting.JobStatus.ACTIVE " +
+            "AND j.status = :status " +
             "AND j.expiresAt IS NOT NULL " +
             "AND j.expiresAt < :today")
-    List<JobPosting> findExpiredActiveJobs(@Param("today") LocalDate today);
+    List<JobPosting> findExpiredActiveJobs(
+            @Param("today")  LocalDate today,
+            @Param("status") JobStatus status
+    );
+
+    default List<JobPosting> findExpiredActiveJobs(LocalDate today) {
+        return findExpiredActiveJobs(today, JobStatus.ACTIVE);
+    }
 
     @Modifying
     @Query("UPDATE JobPosting j SET j.deletedAt = :now WHERE j.id = :id")
     void softDelete(@Param("id") Integer id, @Param("now") LocalDateTime now);
 
     @Modifying
-    @Query("UPDATE JobPosting j SET j.status = com.example.jobapp.Entity.JobPosting.JobStatus.CLOSED, j.updatedAt = :now " +
-            "WHERE j.status = com.example.jobapp.Entity.JobPosting.JobStatus.ACTIVE " +
+    @Query("UPDATE JobPosting j SET j.status = :closed, j.updatedAt = :now " +
+            "WHERE j.status = :active " +
             "AND j.deletedAt IS NULL " +
             "AND j.expiresAt IS NOT NULL " +
             "AND j.expiresAt < :today")
-    int closeExpiredJobs(@Param("today") LocalDate today, @Param("now") LocalDateTime now);
+    int closeExpiredJobs(
+            @Param("today")  LocalDate today,
+            @Param("now")    LocalDateTime now,
+            @Param("active") JobStatus active,
+            @Param("closed") JobStatus closed
+    );
+
+    default int closeExpiredJobs(LocalDate today, LocalDateTime now) {
+        return closeExpiredJobs(today, now, JobStatus.ACTIVE, JobStatus.CLOSED);
+    }
 }

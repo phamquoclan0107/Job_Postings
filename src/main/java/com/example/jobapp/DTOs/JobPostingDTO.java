@@ -48,9 +48,6 @@ public class JobPostingDTO {
 
         private ExperienceLevel experienceLevel;
 
-        @Size(max = 500, message = "URL ảnh tối đa 500 ký tự")
-        private String imageUrl;
-
         @NotNull(message = "Trạng thái không được để trống")
         private JobStatus status;
 
@@ -96,9 +93,6 @@ public class JobPostingDTO {
 
         private ExperienceLevel experienceLevel;
 
-        @Size(max = 500)
-        private String imageUrl;
-
         private JobStatus status;
 
         @Email
@@ -123,7 +117,6 @@ public class JobPostingDTO {
         private JobType jobType;
         private ExperienceLevel experienceLevel;
         private String location;
-        private String imageUrl;
         private JobStatus status;
         private LocalDate expiresAt;
         private LocalDateTime postedAt;
@@ -148,7 +141,6 @@ public class JobPostingDTO {
         private String benefits;
         private String requirements;
         private String location;
-        private String imageUrl;
         private JobStatus status;
         private String contactEmail;
         private LocalDate expiresAt;

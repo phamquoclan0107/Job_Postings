@@ -75,9 +75,6 @@ public class JobPosting {
     @Column(name = "experience_level", length = 50)
     private ExperienceLevel experienceLevel;
 
-    @Column(name = "image_url", length = 500)
-    private String imageUrl;
-
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false,
             columnDefinition = "ENUM('ACTIVE','CLOSED') DEFAULT 'ACTIVE'")

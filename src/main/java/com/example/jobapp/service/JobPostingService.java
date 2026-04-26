@@ -105,7 +105,6 @@ public class JobPostingService {
                 .benefits(req.getBenefits())
                 .requirements(req.getRequirements())
                 .location(req.getLocation())
-                .imageUrl(req.getImageUrl())
                 .status(req.getStatus())
                 .contactEmail(req.getContactEmail())
                 .expiresAt(req.getExpiresAt())
