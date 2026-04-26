@@ -52,22 +52,7 @@ export default function PublicJobDetailPage() {
         <div style={{ flex: 1, minWidth: 0 }}>
           {/* Header Card */}
           <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: 28, marginBottom: 20 }}>
-            {job.imageUrl && (
-              <div style={{ marginBottom: 20, borderRadius: 12, overflow: 'hidden' }}>
-                <img
-                  src={job.imageUrl}
-                  alt={job.title}
-                  style={{ width: '100%', maxHeight: 280, objectFit: 'cover', display: 'block', borderRadius: 12 }}
-                  onError={(e) => { e.target.parentElement.style.display = 'none' }}
-                />
-              </div>
-            )}
             <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start', flexWrap: 'wrap' }}>
-              {!job.imageUrl && (
-                <div style={{ width: 72, height: 72, borderRadius: 12, background: '#f0fdf4', border: '1px solid #bbf7d0', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <BriefcaseIcon />
-                </div>
-              )}
               <div style={{ flex: 1, minWidth: 0 }}>
                 <h1 style={{ fontSize: 22, fontWeight: 800, color: '#1a2340', margin: '0 0 4px' }}>{job.title}</h1>
                 {job.companyName && (
@@ -192,10 +177,6 @@ export default function PublicJobDetailPage() {
                 onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.08)'}
                 onMouseLeave={(e) => e.currentTarget.style.boxShadow = 'none'}
               >
-                {j.imageUrl && (
-                  <img src={j.imageUrl} alt="" style={{ width: '100%', height: 80, objectFit: 'cover', borderRadius: 8, marginBottom: 10 }}
-                    onError={(e) => e.target.style.display = 'none'} />
-                )}
                 <div style={{ fontWeight: 600, fontSize: 14, color: '#1a2340', marginBottom: 4 }}>{j.title}</div>
                 {j.companyName && <div style={{ fontSize: 12, color: '#374151', marginBottom: 4 }}>{j.companyName}</div>}
                 <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 8 }}>{j.location || '—'}</div>
@@ -226,9 +207,6 @@ function SectionTitle({ children }) {
   )
 }
 
-function BriefcaseIcon() {
-  return <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#1a7a4a" strokeWidth="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
-}
 
 function BookmarkIcon({ filled }) {
   return (

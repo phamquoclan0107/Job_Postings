@@ -1,10 +1,19 @@
-import { useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useCategories } from '../../hooks/useCategories'
 import { Button, FormField, Input, Textarea, Select } from '../ui'
+import { addProductImages, deleteProductImage } from '../../api/productApi'
 
 export default function ProductForm({ defaultValues, onSubmit, loading, submitLabel = 'Lưu' }) {
   const { categories, loading: catLoading, error: catError } = useCategories('PRODUCT')
+  const fileInputRef = useRef(null)
+
+  // images = list of { id, imageUrl } from server (for edit mode)
+  // pendingFiles = files selected for upload after save (for create mode)
+  const [images, setImages]           = useState(defaultValues?.images || [])
+  const [uploading, setUploading]     = useState(false)
+  const [uploadError, setUploadError] = useState('')
+  const [deletingId, setDeletingId]   = useState(null)
 
   const {
     register,
@@ -14,8 +23,47 @@ export default function ProductForm({ defaultValues, onSubmit, loading, submitLa
   } = useForm({ defaultValues })
 
   useEffect(() => {
-    if (defaultValues) reset(defaultValues)
+    if (defaultValues) {
+      reset(defaultValues)
+      setImages(defaultValues.images || [])
+    }
   }, [defaultValues, reset])
+
+  // Upload files immediately (only works when product already exists = edit mode)
+  const handleFileChange = async (e) => {
+    const files = Array.from(e.target.files || [])
+    if (!files.length) return
+    if (!defaultValues?.id) {
+      setUploadError('Vui lòng tạo sản phẩm trước, sau đó thêm ảnh trong trang chỉnh sửa.')
+      return
+    }
+    setUploadError('')
+    setUploading(true)
+    try {
+      const res = await addProductImages(defaultValues.id, files)
+      if (!res.success) throw new Error(res.message)
+      // append new images to list
+      setImages((prev) => [...prev, ...(res.data || [])])
+    } catch (err) {
+      setUploadError(err?.response?.data?.message || err?.message || 'Upload thất bại')
+    } finally {
+      setUploading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
+  const handleDeleteImage = async (imageId) => {
+    if (!defaultValues?.id) return
+    setDeletingId(imageId)
+    try {
+      await deleteProductImage(defaultValues.id, imageId)
+      setImages((prev) => prev.filter((img) => img.id !== imageId))
+    } catch (err) {
+      setUploadError(err?.response?.data?.message || err?.message || 'Xóa ảnh thất bại')
+    } finally {
+      setDeletingId(null)
+    }
+  }
 
   const handleFormSubmit = (data) => {
     const clean = Object.fromEntries(
@@ -25,6 +73,8 @@ export default function ProductForm({ defaultValues, onSubmit, loading, submitLa
     if (clean.isActive !== undefined) clean.isActive = clean.isActive === 'true' || clean.isActive === true
     onSubmit(clean)
   }
+
+  const isEditMode = !!defaultValues?.id
 
   return (
     <form onSubmit={handleSubmit(handleFormSubmit)}>
@@ -104,11 +154,102 @@ export default function ProductForm({ defaultValues, onSubmit, loading, submitLa
           </FormField>
         </div>
 
+        {/* IMAGE UPLOAD — full width, chỉ hiển thị ở edit mode */}
+        <div className="col-span-2">
+          <FormField
+            label="Hình ảnh sản phẩm"
+            hint={isEditMode ? 'PNG, JPG, WEBP · tối đa 5MB mỗi ảnh' : 'Tạo sản phẩm trước, sau đó thêm ảnh ở trang chỉnh sửa'}
+          >
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+
+              {/* Existing images grid */}
+              {images.length > 0 && (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: 8 }}>
+                  {images.map((img) => (
+                    <div key={img.id} style={{ position: 'relative', borderRadius: 8, overflow: 'hidden', border: '1px solid var(--border)', aspectRatio: '1' }}>
+                      <img
+                        src={img.imageUrl}
+                        alt=""
+                        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                        onError={(e) => { e.target.style.display = 'none' }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteImage(img.id)}
+                        disabled={deletingId === img.id}
+                        style={{
+                          position: 'absolute', top: 4, right: 4,
+                          background: 'rgba(0,0,0,0.55)', border: 'none', borderRadius: '50%',
+                          width: 22, height: 22, cursor: 'pointer',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          color: '#fff', fontSize: 12, lineHeight: 1,
+                        }}
+                        title="Xóa ảnh"
+                      >
+                        {deletingId === img.id ? '…' : '×'}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Upload button */}
+              {isEditMode && (
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <button
+                    type="button"
+                    onClick={() => !uploading && fileInputRef.current?.click()}
+                    disabled={uploading}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 6,
+                      padding: '8px 16px', border: '1.5px dashed var(--border)',
+                      borderRadius: 8, background: 'var(--bg)', cursor: uploading ? 'not-allowed' : 'pointer',
+                      fontSize: 13, color: 'var(--text-mute)', fontWeight: 500,
+                      transition: 'border-color 0.2s',
+                    }}
+                    onMouseEnter={(e) => { if (!uploading) e.currentTarget.style.borderColor = 'var(--accent)' }}
+                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)' }}
+                  >
+                    <UploadIcon />
+                    {uploading ? 'Đang tải lên...' : '+ Thêm ảnh'}
+                  </button>
+                  <span style={{ fontSize: 12, color: 'var(--text-mute)' }}>
+                    {images.length} ảnh
+                  </span>
+                </div>
+              )}
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/gif"
+                multiple
+                style={{ display: 'none' }}
+                onChange={handleFileChange}
+              />
+
+              {uploadError && (
+                <p style={{ color: 'var(--red)', fontSize: 12, margin: 0 }}>{uploadError}</p>
+              )}
+            </div>
+          </FormField>
+        </div>
+
       </div>
 
       <div className="flex gap-2.5 justify-end mt-2">
         <Button type="submit" loading={loading}>{submitLabel}</Button>
       </div>
     </form>
+  )
+}
+
+function UploadIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="16 16 12 12 8 16"/>
+      <line x1="12" y1="12" x2="12" y2="21"/>
+      <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>
+    </svg>
   )
 }

@@ -1,22 +1,14 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useCategories } from '../../hooks/useCategories'
 import { Button, FormField, Input, Textarea, Select } from '../ui'
-import { uploadJobImage } from '../../api/uploadApi'
 
 export default function JobForm({ defaultValues, onSubmit, loading, submitLabel = 'Lưu' }) {
   const { categories, loading: catLoading, error: catError } = useCategories('JOB')
-  const fileInputRef = useRef(null)
-
-  const [imagePreview, setImagePreview] = useState(defaultValues?.imageUrl || '')
-  const [uploading, setUploading]       = useState(false)
-  const [uploadError, setUploadError]   = useState('')
-
   const {
     register,
     handleSubmit,
     reset,
-    watch,
     setValue,
     setError,
     clearErrors,
@@ -26,37 +18,8 @@ export default function JobForm({ defaultValues, onSubmit, loading, submitLabel 
   useEffect(() => {
     if (defaultValues) {
       reset(defaultValues)
-      setImagePreview(defaultValues.imageUrl || '')
     }
   }, [defaultValues, reset])
-
-  const imageUrlValue = watch('imageUrl')
-  useEffect(() => {
-    setImagePreview(imageUrlValue || '')
-  }, [imageUrlValue])
-
-  const handleFileChange = async (e) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setUploadError('')
-    const localUrl = URL.createObjectURL(file)
-    setImagePreview(localUrl)
-    setUploading(true)
-    try {
-      const res = await uploadJobImage(file)
-      if (!res.success) throw new Error(res.message)
-      const remoteUrl = res.data?.url || res.data
-      setValue('imageUrl', remoteUrl, { shouldDirty: true })
-      setImagePreview(remoteUrl)
-    } catch (err) {
-      setUploadError(err?.response?.data?.message || err?.message || 'Upload thất bại')
-      setImagePreview('')
-      setValue('imageUrl', '', { shouldDirty: true })
-    } finally {
-      setUploading(false)
-      if (fileInputRef.current) fileInputRef.current.value = ''
-    }
-  }
 
   const handleFormSubmit = (data) => {
     const min = data.salaryMin ? Number(data.salaryMin) : null
@@ -226,94 +189,6 @@ export default function JobForm({ defaultValues, onSubmit, loading, submitLabel 
           <Input type="date" error={errors.expiresAt} {...register('expiresAt')} />
         </FormField>
 
-        {/* IMAGE UPLOAD — full width */}
-        <div className="col-span-2">
-          <FormField label="Hình ảnh (tuỳ chọn)" error={uploadError || errors.imageUrl?.message}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <div
-                onClick={() => !uploading && fileInputRef.current?.click()}
-                style={{
-                  width: '100%',
-                  height: imagePreview ? 'auto' : 160,
-                  minHeight: 160,
-                  border: '2px dashed var(--border)',
-                  borderRadius: 10,
-                  overflow: 'hidden',
-                  cursor: uploading ? 'not-allowed' : 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  background: 'var(--bg)',
-                  position: 'relative',
-                  transition: 'border-color 0.2s',
-                }}
-                onMouseEnter={(e) => { if (!uploading) e.currentTarget.style.borderColor = 'var(--accent)' }}
-                onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)' }}
-              >
-                {uploading ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" style={{ animation: 'spin 1s linear infinite' }}>
-                      <circle cx="12" cy="12" r="10" opacity="0.25" /><path d="M12 2a10 10 0 0 1 10 10" />
-                    </svg>
-                    <span style={{ fontSize: 13, color: 'var(--text-mute)' }}>Đang tải lên...</span>
-                  </div>
-                ) : imagePreview ? (
-                  <>
-                    <img
-                      src={imagePreview}
-                      alt="Preview"
-                      style={{ width: '100%', maxHeight: 280, objectFit: 'cover', display: 'block' }}
-                      onError={(e) => { e.target.style.display = 'none' }}
-                    />
-                    <div style={{
-                      position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.45)',
-                      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                      gap: 6, opacity: 0, transition: 'opacity 0.2s',
-                    }}
-                      onMouseEnter={(e) => { e.currentTarget.style.opacity = 1 }}
-                      onMouseLeave={(e) => { e.currentTarget.style.opacity = 0 }}
-                    >
-                      <UploadIcon />
-                      <span style={{ color: '#fff', fontSize: 13, fontWeight: 600 }}>Thay ảnh</span>
-                    </div>
-                  </>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-                    <UploadIcon muted />
-                    <span style={{ fontSize: 13, color: 'var(--text-mute)', fontWeight: 500 }}>Nhấn để chọn ảnh</span>
-                    <span style={{ fontSize: 11, color: 'var(--text-mute)' }}>PNG, JPG, WEBP · tối đa 5MB</span>
-                  </div>
-                )}
-              </div>
-
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/png,image/jpeg,image/webp,image/gif"
-                style={{ display: 'none' }}
-                onChange={handleFileChange}
-              />
-
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                <div style={{ flex: 1 }}>
-                  <Input
-                    placeholder="Hoặc nhập URL ảnh: https://..."
-                    error={errors.imageUrl}
-                    {...register('imageUrl', { maxLength: { value: 500, message: 'Tối đa 500 ký tự' } })}
-                  />
-                </div>
-                <Button type="button" variant="ghost" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
-                  <UploadIcon small /> {uploading ? 'Đang up...' : 'Chọn file'}
-                </Button>
-              </div>
-
-              {uploadError && (
-                <p style={{ color: 'var(--red)', fontSize: 12, margin: 0 }}>{uploadError}</p>
-              )}
-            </div>
-          </FormField>
-        </div>
-
         {/* Description */}
         <div className="col-span-2">
           <FormField label="Mô tả công việc" error={errors.description?.message}>
@@ -360,17 +235,5 @@ export default function JobForm({ defaultValues, onSubmit, loading, submitLabel 
         <Button type="submit" loading={loading}>{submitLabel}</Button>
       </div>
     </form>
-  )
-}
-
-function UploadIcon({ muted, small }) {
-  const size  = small ? 16 : 28
-  const color = muted ? 'var(--text-mute)' : '#fff'
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="16 16 12 12 8 16"/>
-      <line x1="12" y1="12" x2="12" y2="21"/>
-      <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>
-    </svg>
   )
 }

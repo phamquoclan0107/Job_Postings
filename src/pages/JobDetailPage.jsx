@@ -46,16 +46,6 @@ export default function JobDetailPage() {
       <div className="flex gap-5 items-start flex-wrap">
         {/* Left */}
         <div className="flex-1 min-w-0">
-          {job.imageUrl && (
-            <Card className="mb-5 overflow-hidden">
-              <img
-                src={job.imageUrl}
-                alt={job.title}
-                style={{ width: '100%', maxHeight: 300, objectFit: 'cover', display: 'block', borderRadius: 8 }}
-                onError={(e) => { e.target.parentElement.style.display = 'none' }}
-              />
-            </Card>
-          )}
 
           <Card className="p-7 mb-5">
             <h2 className="font-head text-[15px] font-bold text-text-pri mb-3.5">Mô tả công việc</h2>

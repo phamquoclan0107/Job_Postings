@@ -180,19 +180,6 @@ function JobCard({ job, saved, onSave, onClick }) {
       onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.1)'; e.currentTarget.style.transform = 'translateY(-2px)' }}
       onMouseLeave={(e) => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'translateY(0)' }}
     >
-      {/* Thumbnail */}
-      {job.imageUrl ? (
-        <img
-          src={job.imageUrl}
-          alt=""
-          style={{ width: '100%', height: 120, objectFit: 'cover', display: 'block' }}
-          onError={(e) => { e.target.style.display = 'none' }}
-        />
-      ) : (
-        <div style={{ width: '100%', height: 80, background: 'linear-gradient(135deg, #f0fdf4, #dcfce7)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1a7a4a" strokeWidth="1.5"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
-        </div>
-      )}
 
       <div style={{ padding: 16 }}>
         <button onClick={onSave} style={{ position: 'absolute', top: 12, right: 12, background: 'rgba(255,255,255,0.9)', border: 'none', cursor: 'pointer', padding: 6, borderRadius: 6 }}>

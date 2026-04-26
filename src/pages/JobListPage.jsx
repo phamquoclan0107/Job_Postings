@@ -138,15 +138,7 @@ export default function JobListPage() {
                       </td>
                       <td className="px-4 py-3.5 border-b border-border align-middle max-w-[220px]">
                         <div className="flex items-center gap-2.5">
-                          {job.imageUrl ? (
-                            <img src={job.imageUrl} alt="" className="w-8 h-8 rounded-[6px] object-cover flex-shrink-0"
-                              onError={(e) => { e.target.style.display = 'none' }} />
-                          ) : (
-                            <div className="w-8 h-8 rounded-[6px] bg-bg-hover flex items-center justify-center flex-shrink-0 text-text-mute">
-                              <BriefcaseSmall />
-                            </div>
-                          )}
-                          <span className="font-medium text-[13px] overflow-hidden text-ellipsis whitespace-nowrap">{job.title}</span>
+                                          <span className="font-medium text-[13px] overflow-hidden text-ellipsis whitespace-nowrap">{job.title}</span>
                         </div>
                       </td>
                       <td className="px-4 py-3.5 border-b border-border align-middle">
