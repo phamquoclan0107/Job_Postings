@@ -34,6 +34,13 @@ public class Admin {
     @Column(name = "email", nullable = false, length = 100)
     private String email;
 
+    // THÊM MỚI: thông tin cá nhân mở rộng
+    @Column(name = "full_name", length = 100)
+    private String fullName;
+
+    @Column(name = "phone", length = 20)
+    private String phone;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
