@@ -140,7 +140,7 @@ public class JobPostingService {
         if (req.getBenefits()        != null) job.setBenefits(req.getBenefits());
         if (req.getRequirements()    != null) job.setRequirements(req.getRequirements());
         if (req.getLocation()        != null) job.setLocation(req.getLocation());
-        if (req.getImageUrl()        != null) job.setImageUrl(req.getImageUrl());
+//        if (req.getImageUrl()        != null) job.setImageUrl(req.getImageUrl());
         if (req.getStatus()          != null) job.setStatus(req.getStatus());
         if (req.getContactEmail()    != null) job.setContactEmail(req.getContactEmail());
         if (req.getExpiresAt()       != null) job.setExpiresAt(req.getExpiresAt());
