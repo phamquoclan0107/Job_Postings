@@ -31,19 +31,18 @@ export default function JobEditPage() {
   }
 
   const defaultValues = job ? {
-    title:        job.title        || '',
-    categoryId:   job.categoryId   || '',
-    description:  job.description  || '',
-    salary:       job.salary       || '',
-    salaryMin:    job.salaryMin    || '',
-    salaryMax:    job.salaryMax    || '',
-    salaryType:   job.salaryType   || '',
-    benefits:     job.benefits     || '',
-    requirements: job.requirements || '',
-    location:     job.location     || '',
-    imageUrl:     job.imageUrl     || '',
-    status:       job.status       || '',
-    expiresAt:    job.expiresAt    || '',
+    title:          job.title          || '',
+    categoryId:     job.categoryId     || '',   // ← thêm
+    jobType:        job.jobType        || '',   // ← thêm
+    contactEmail:   job.contactEmail   || '',   // ← thêm
+    description:    job.description    || '',
+    requirements:   job.requirements   || '',
+    benefits:       job.benefits       || '',
+    location:       job.location       || '',
+    experienceLevel: job.experienceLevel || '',  // ← thêm
+    status:         job.status         || '',
+    expiresAt:      job.expiresAt      || '',
+    imageUrl:       job.imageUrl       || '',
   } : undefined
 
   return (

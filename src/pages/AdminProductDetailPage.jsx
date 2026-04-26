@@ -61,7 +61,7 @@ export default function AdminProductDetailPage() {
                 {product.images.map((img) => (
                   <img
                     key={img.id}
-                    src={img.imageUrl}
+                    src={img.url}
                     alt={product.name}
                     className="w-full rounded-lg object-cover"
                     style={{ maxHeight: 160 }}

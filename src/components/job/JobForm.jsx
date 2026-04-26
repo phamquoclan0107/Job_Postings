@@ -14,7 +14,12 @@ export default function JobForm({ defaultValues, onSubmit, loading, submitLabel 
 
   useEffect(() => {
     if (defaultValues) {
-      reset(defaultValues)
+      // Ép tất cả ID về string để <option value="..."> match đúng
+      reset({
+        ...defaultValues,
+        categoryId: defaultValues.categoryId != null ? String(defaultValues.categoryId) : '',
+        jobType:    defaultValues.jobType    || '',
+      })
     }
   }, [defaultValues, reset])
 
@@ -45,19 +50,6 @@ export default function JobForm({ defaultValues, onSubmit, loading, submitLabel 
           </FormField>
         </div>
 
-        {/* Company Name */}
-        {/* <div className="col-span-2">
-          <FormField label="Tên công ty" error={errors.companyName?.message}>
-            <Input
-              placeholder="Ví dụ: Công ty Dược phẩm FreMed"
-              error={errors.companyName}
-              {...register('companyName', {
-                maxLength: { value: 200, message: 'Tối đa 200 ký tự' },
-              })}
-            />
-          </FormField>
-        </div> */}
-
         {/* Category */}
         <FormField label="Danh mục" required error={catError || errors.categoryId?.message}>
           <Select
@@ -72,7 +64,7 @@ export default function JobForm({ defaultValues, onSubmit, loading, submitLabel 
                 : <>
                     <option value="">-- Chọn danh mục --</option>
                     {categories.map((c) => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
+                      <option key={c.id} value={String(c.id)}>{c.name}</option>
                     ))}
                     {categories.length === 0 && (
                       <option disabled value="">Chưa có danh mục nào</option>
