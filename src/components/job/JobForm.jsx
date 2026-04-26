@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { useCategories } from '../../hooks/useCategories'
 import { Button, FormField, Input, Textarea, Select } from '../ui'
@@ -9,9 +9,6 @@ export default function JobForm({ defaultValues, onSubmit, loading, submitLabel 
     register,
     handleSubmit,
     reset,
-    setValue,
-    setError,
-    clearErrors,
     formState: { errors },
   } = useForm({ defaultValues })
 
@@ -22,21 +19,10 @@ export default function JobForm({ defaultValues, onSubmit, loading, submitLabel 
   }, [defaultValues, reset])
 
   const handleFormSubmit = (data) => {
-    const min = data.salaryMin ? Number(data.salaryMin) : null
-    const max = data.salaryMax ? Number(data.salaryMax) : null
-    if (min !== null && max !== null && min > max) {
-      setError('salaryMax', { type: 'manual', message: 'Lương tối đa phải >= lương tối thiểu' })
-      return
-    }
-    clearErrors('salaryMax')
-
     const clean = Object.fromEntries(
       Object.entries(data).map(([k, v]) => [k, v === '' ? undefined : v])
     )
     if (clean.categoryId) clean.categoryId = Number(clean.categoryId)
-    if (clean.salaryMin)  clean.salaryMin  = Number(clean.salaryMin)
-    if (clean.salaryMax)  clean.salaryMax  = Number(clean.salaryMax)
-
     onSubmit(clean)
   }
 
@@ -60,7 +46,7 @@ export default function JobForm({ defaultValues, onSubmit, loading, submitLabel 
         </div>
 
         {/* Company Name */}
-        <div className="col-span-2">
+        {/* <div className="col-span-2">
           <FormField label="Tên công ty" error={errors.companyName?.message}>
             <Input
               placeholder="Ví dụ: Công ty Dược phẩm FreMed"
@@ -70,7 +56,7 @@ export default function JobForm({ defaultValues, onSubmit, loading, submitLabel 
               })}
             />
           </FormField>
-        </div>
+        </div> */}
 
         {/* Category */}
         <FormField label="Danh mục" required error={catError || errors.categoryId?.message}>
@@ -117,44 +103,16 @@ export default function JobForm({ defaultValues, onSubmit, loading, submitLabel 
           </Select>
         </FormField>
 
-        {/* Experience Level */}
-        <FormField label="Cấp độ kinh nghiệm" error={errors.experienceLevel?.message}>
-          <Select error={errors.experienceLevel} {...register('experienceLevel')}>
-            <option value="">-- Chọn cấp độ --</option>
-            <option value="FRESHER">Fresher (chưa có kinh nghiệm)</option>
-            <option value="JUNIOR">Junior (1-2 năm)</option>
-            <option value="MID">Mid-level (2-4 năm)</option>
-            <option value="SENIOR">Senior (4+ năm)</option>
-            <option value="LEAD">Lead / Manager</option>
-          </Select>
-        </FormField>
-
-        {/* Salary Min */}
-        <FormField label="Lương tối thiểu (VNĐ)" error={errors.salaryMin?.message} hint="Để trống nếu thỏa thuận">
+        {/* Experience Level — free text */}
+        <FormField label="Cấp độ / Kinh nghiệm" error={errors.experienceLevel?.message}
+          hint="Ví dụ: 2-3 năm, Senior, Không yêu cầu kinh nghiệm...">
           <Input
-            type="number" placeholder="Ví dụ: 10000000" min="0"
-            error={errors.salaryMin}
-            {...register('salaryMin', { min: { value: 0, message: 'Không được âm' } })}
+            placeholder="Ví dụ: Fresher, 1-2 năm, Senior 4+ năm..."
+            error={errors.experienceLevel}
+            {...register('experienceLevel', {
+              maxLength: { value: 100, message: 'Tối đa 100 ký tự' },
+            })}
           />
-        </FormField>
-
-        {/* Salary Max */}
-        <FormField label="Lương tối đa (VNĐ)" error={errors.salaryMax?.message}>
-          <Input
-            type="number" placeholder="Ví dụ: 20000000" min="0"
-            error={errors.salaryMax}
-            {...register('salaryMax', { min: { value: 0, message: 'Không được âm' } })}
-          />
-        </FormField>
-
-        {/* Salary Type */}
-        <FormField label="Loại lương" error={errors.salaryType?.message}>
-          <Select error={errors.salaryType} {...register('salaryType')}>
-            <option value="">-- Chọn loại lương --</option>
-            <option value="GROSS">Gross</option>
-            <option value="NET">Net</option>
-            <option value="NEGOTIATE">Thỏa thuận</option>
-          </Select>
         </FormField>
 
         {/* Location */}
@@ -166,7 +124,7 @@ export default function JobForm({ defaultValues, onSubmit, loading, submitLabel 
           />
         </FormField>
 
-        {/* Contact Email — required, dùng job.contactEmail thay vì hardcode */}
+        {/* Contact Email */}
         <FormField label="Email liên hệ" required error={errors.contactEmail?.message}
           hint="Email này hiển thị cho ứng viên để nộp hồ sơ">
           <Input
@@ -226,10 +184,6 @@ export default function JobForm({ defaultValues, onSubmit, loading, submitLabel 
         </div>
 
       </div>
-
-      <style>{`
-        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-      `}</style>
 
       <div className="flex gap-2.5 justify-end mt-2">
         <Button type="submit" loading={loading}>{submitLabel}</Button>

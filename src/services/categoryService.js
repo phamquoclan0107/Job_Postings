@@ -1,11 +1,14 @@
-// src/services/categoryService.js
-import * as categoryApi from '../api/categoryApi'
+import * as categoryApi from "../api/categoryApi"
+
+const normalize = (payload) => ({
+  ...payload,
+  type: payload.type?.trim().toUpperCase(),
+})
 
 export const categoryService = {
-  /** Lấy tất cả categories, có thể lọc theo type: "JOB" | "PRODUCT" */
   async getAll(type) {
     const res = await categoryApi.getAllCategories(type)
-    return res.data // List<CategoryDTO.Response>
+    return res.data
   },
 
   async getById(id) {
@@ -14,12 +17,12 @@ export const categoryService = {
   },
 
   async create(payload) {
-    const res = await categoryApi.createCategory(payload)
+    const res = await categoryApi.createCategory(normalize(payload))
     return res.data
   },
 
   async update(id, payload) {
-    const res = await categoryApi.updateCategory(id, payload)
+    const res = await categoryApi.updateCategory(id, normalize(payload))
     return res.data
   },
 

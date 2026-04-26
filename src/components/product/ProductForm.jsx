@@ -4,16 +4,28 @@ import { useCategories } from '../../hooks/useCategories'
 import { Button, FormField, Input, Textarea, Select } from '../ui'
 import { addProductImages, deleteProductImage } from '../../api/productApi'
 
-export default function ProductForm({ defaultValues, onSubmit, loading, submitLabel = 'Lưu' }) {
+export default function ProductForm({
+  defaultValues,
+  onSubmit,
+  loading,
+  submitLabel = 'Lưu',
+  // Create mode: gọi callback này với files đã chọn để page cha tự upload sau khi tạo xong
+  onPendingFiles,
+}) {
   const { categories, loading: catLoading, error: catError } = useCategories('PRODUCT')
   const fileInputRef = useRef(null)
 
-  // images = list of { id, imageUrl } from server (for edit mode)
-  // pendingFiles = files selected for upload after save (for create mode)
+  const isEditMode = !!defaultValues?.id
+
+  // Edit mode: ảnh đã có trên server
   const [images, setImages]           = useState(defaultValues?.images || [])
   const [uploading, setUploading]     = useState(false)
   const [uploadError, setUploadError] = useState('')
   const [deletingId, setDeletingId]   = useState(null)
+
+  // Create mode: ảnh chọn trước (chưa upload), preview bằng blob URL
+  const [pendingFiles, setPendingFiles] = useState([])   // File[]
+  const [previews, setPreviews]         = useState([])   // { name, url }[]
 
   const {
     register,
@@ -25,24 +37,34 @@ export default function ProductForm({ defaultValues, onSubmit, loading, submitLa
   useEffect(() => {
     if (defaultValues) {
       reset(defaultValues)
-      setImages(defaultValues.images || [])
+      if (isEditMode) setImages(defaultValues.images || [])
     }
-  }, [defaultValues, reset])
+  }, [defaultValues, reset, isEditMode])
 
-  // Upload files immediately (only works when product already exists = edit mode)
+  // Revoke blob URLs khi unmount tránh leak
+  useEffect(() => {
+    return () => previews.forEach((p) => URL.revokeObjectURL(p.url))
+  }, [previews])
+
+  // ── EDIT MODE: upload ngay ─────────────────────────────────────
   const handleFileChange = async (e) => {
     const files = Array.from(e.target.files || [])
     if (!files.length) return
-    if (!defaultValues?.id) {
-      setUploadError('Vui lòng tạo sản phẩm trước, sau đó thêm ảnh trong trang chỉnh sửa.')
+
+    if (!isEditMode) {
+      // CREATE MODE: chỉ preview, không upload
+      const newPreviews = files.map((f) => ({ name: f.name, url: URL.createObjectURL(f) }))
+      setPendingFiles((prev) => [...prev, ...files])
+      setPreviews((prev) => [...prev, ...newPreviews])
+      if (fileInputRef.current) fileInputRef.current.value = ''
       return
     }
+
     setUploadError('')
     setUploading(true)
     try {
       const res = await addProductImages(defaultValues.id, files)
       if (!res.success) throw new Error(res.message)
-      // append new images to list
       setImages((prev) => [...prev, ...(res.data || [])])
     } catch (err) {
       setUploadError(err?.response?.data?.message || err?.message || 'Upload thất bại')
@@ -53,7 +75,6 @@ export default function ProductForm({ defaultValues, onSubmit, loading, submitLa
   }
 
   const handleDeleteImage = async (imageId) => {
-    if (!defaultValues?.id) return
     setDeletingId(imageId)
     try {
       await deleteProductImage(defaultValues.id, imageId)
@@ -65,22 +86,31 @@ export default function ProductForm({ defaultValues, onSubmit, loading, submitLa
     }
   }
 
+  const handleRemovePending = (index) => {
+    URL.revokeObjectURL(previews[index].url)
+    setPreviews((prev) => prev.filter((_, i) => i !== index))
+    setPendingFiles((prev) => prev.filter((_, i) => i !== index))
+  }
+
   const handleFormSubmit = (data) => {
     const clean = Object.fromEntries(
       Object.entries(data).map(([k, v]) => [k, v === '' ? undefined : v])
     )
     if (clean.categoryId) clean.categoryId = Number(clean.categoryId)
     if (clean.isActive !== undefined) clean.isActive = clean.isActive === 'true' || clean.isActive === true
+
+    // Truyền pendingFiles lên page cha (dùng ở create mode)
+    if (onPendingFiles) onPendingFiles(pendingFiles)
     onSubmit(clean)
   }
 
-  const isEditMode = !!defaultValues?.id
+  const totalImageCount = isEditMode ? images.length : previews.length
 
   return (
     <form onSubmit={handleSubmit(handleFormSubmit)}>
       <div className="grid grid-cols-2 gap-x-5">
 
-        {/* Product Code — full width */}
+        {/* Product Code */}
         <div className="col-span-2">
           <FormField label="Mã sản phẩm" required error={errors.productCode?.message} hint="Chỉ chữ hoa, số, dấu gạch. VD: SP_001">
             <Input
@@ -95,7 +125,7 @@ export default function ProductForm({ defaultValues, onSubmit, loading, submitLa
           </FormField>
         </div>
 
-        {/* Name — full width */}
+        {/* Name */}
         <div className="col-span-2">
           <FormField label="Tên sản phẩm" required error={errors.name?.message}>
             <Input
@@ -112,23 +142,15 @@ export default function ProductForm({ defaultValues, onSubmit, loading, submitLa
 
         {/* Category */}
         <FormField label="Danh mục" required error={catError || errors.categoryId?.message}>
-          <Select
-            error={catError || errors.categoryId}
-            disabled={catLoading}
-            {...register('categoryId', { required: 'Vui lòng chọn danh mục' })}
-          >
+          <Select error={catError || errors.categoryId} disabled={catLoading} {...register('categoryId', { required: 'Vui lòng chọn danh mục' })}>
             {catLoading
               ? <option value="">Đang tải danh mục...</option>
               : catError
                 ? <option value="">Lỗi tải danh mục — thử lại</option>
                 : <>
                     <option value="">-- Chọn danh mục --</option>
-                    {categories.map((c) => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
-                    {categories.length === 0 && (
-                      <option disabled value="">Chưa có danh mục nào</option>
-                    )}
+                    {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    {categories.length === 0 && <option disabled value="">Chưa có danh mục nào</option>}
                   </>
             }
           </Select>
@@ -142,7 +164,7 @@ export default function ProductForm({ defaultValues, onSubmit, loading, submitLa
           </Select>
         </FormField>
 
-        {/* Description — full width */}
+        {/* Description */}
         <div className="col-span-2">
           <FormField label="Mô tả sản phẩm" error={errors.description?.message}>
             <Textarea
@@ -154,38 +176,21 @@ export default function ProductForm({ defaultValues, onSubmit, loading, submitLa
           </FormField>
         </div>
 
-        {/* IMAGE UPLOAD — full width, chỉ hiển thị ở edit mode */}
+        {/* IMAGE SECTION */}
         <div className="col-span-2">
           <FormField
             label="Hình ảnh sản phẩm"
-            hint={isEditMode ? 'PNG, JPG, WEBP · tối đa 5MB mỗi ảnh' : 'Tạo sản phẩm trước, sau đó thêm ảnh ở trang chỉnh sửa'}
+            hint="PNG, JPG, WEBP · tối đa 5MB mỗi ảnh"
           >
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
 
-              {/* Existing images grid */}
-              {images.length > 0 && (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: 8 }}>
+              {/* EDIT MODE: ảnh đã lưu trên server */}
+              {isEditMode && images.length > 0 && (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: 10 }}>
                   {images.map((img) => (
-                    <div key={img.id} style={{ position: 'relative', borderRadius: 8, overflow: 'hidden', border: '1px solid var(--border)', aspectRatio: '1' }}>
-                      <img
-                        src={img.imageUrl}
-                        alt=""
-                        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                        onError={(e) => { e.target.style.display = 'none' }}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteImage(img.id)}
-                        disabled={deletingId === img.id}
-                        style={{
-                          position: 'absolute', top: 4, right: 4,
-                          background: 'rgba(0,0,0,0.55)', border: 'none', borderRadius: '50%',
-                          width: 22, height: 22, cursor: 'pointer',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          color: '#fff', fontSize: 12, lineHeight: 1,
-                        }}
-                        title="Xóa ảnh"
-                      >
+                    <div key={img.id} style={thumbWrap}>
+                      <img src={img.imageUrl} alt="" style={thumbImg} onError={(e) => { e.target.style.display = 'none' }} />
+                      <button type="button" onClick={() => handleDeleteImage(img.id)} disabled={deletingId === img.id} style={deleteBtn} title="Xóa ảnh">
                         {deletingId === img.id ? '…' : '×'}
                       </button>
                     </div>
@@ -193,31 +198,49 @@ export default function ProductForm({ defaultValues, onSubmit, loading, submitLa
                 </div>
               )}
 
-              {/* Upload button */}
-              {isEditMode && (
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                  <button
-                    type="button"
-                    onClick={() => !uploading && fileInputRef.current?.click()}
-                    disabled={uploading}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: 6,
-                      padding: '8px 16px', border: '1.5px dashed var(--border)',
-                      borderRadius: 8, background: 'var(--bg)', cursor: uploading ? 'not-allowed' : 'pointer',
-                      fontSize: 13, color: 'var(--text-mute)', fontWeight: 500,
-                      transition: 'border-color 0.2s',
-                    }}
-                    onMouseEnter={(e) => { if (!uploading) e.currentTarget.style.borderColor = 'var(--accent)' }}
-                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)' }}
-                  >
-                    <UploadIcon />
-                    {uploading ? 'Đang tải lên...' : '+ Thêm ảnh'}
-                  </button>
-                  <span style={{ fontSize: 12, color: 'var(--text-mute)' }}>
-                    {images.length} ảnh
-                  </span>
+              {/* CREATE MODE: preview ảnh chọn trước khi upload */}
+              {!isEditMode && previews.length > 0 && (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: 10 }}>
+                  {previews.map((p, i) => (
+                    <div key={i} style={thumbWrap}>
+                      <img src={p.url} alt={p.name} style={thumbImg} />
+                      <button type="button" onClick={() => handleRemovePending(i)} style={deleteBtn} title="Bỏ ảnh">×</button>
+                      {/* badge "chưa lưu" */}
+                      <div style={{ position: 'absolute', bottom: 4, left: 4, background: 'rgba(0,0,0,0.55)', color: '#fff', fontSize: 9, padding: '1px 5px', borderRadius: 4, fontWeight: 600 }}>
+                        PREVIEW
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
+
+              {/* Nút chọn ảnh — hiển thị cả 2 mode */}
+              <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  onClick={() => !uploading && fileInputRef.current?.click()}
+                  disabled={uploading}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 6,
+                    padding: '9px 18px', border: '1.5px dashed var(--border)',
+                    borderRadius: 8, background: uploading ? '#f9fafb' : 'var(--bg)',
+                    cursor: uploading ? 'not-allowed' : 'pointer',
+                    fontSize: 13, color: 'var(--text-mute)', fontWeight: 500,
+                    transition: 'border-color 0.2s, color 0.2s',
+                  }}
+                  onMouseEnter={(e) => { if (!uploading) { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.color = 'var(--accent)' } }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-mute)' }}
+                >
+                  <UploadIcon />
+                  {uploading ? 'Đang tải lên...' : '+ Chọn ảnh'}
+                </button>
+
+                {totalImageCount > 0 && (
+                  <span style={{ fontSize: 12, color: 'var(--text-mute)' }}>
+                    {totalImageCount} ảnh{!isEditMode ? ' (sẽ được tải lên sau khi tạo sản phẩm)' : ''}
+                  </span>
+                )}
+              </div>
 
               <input
                 ref={fileInputRef}
@@ -246,10 +269,25 @@ export default function ProductForm({ defaultValues, onSubmit, loading, submitLa
 
 function UploadIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <polyline points="16 16 12 12 8 16"/>
       <line x1="12" y1="12" x2="12" y2="21"/>
       <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>
     </svg>
   )
+}
+
+const thumbWrap = {
+  position: 'relative', borderRadius: 8, overflow: 'hidden',
+  border: '1px solid var(--border)', aspectRatio: '1', background: '#f9fafb',
+}
+const thumbImg = {
+  width: '100%', height: '100%', objectFit: 'cover', display: 'block',
+}
+const deleteBtn = {
+  position: 'absolute', top: 4, right: 4,
+  background: 'rgba(0,0,0,0.55)', border: 'none', borderRadius: '50%',
+  width: 22, height: 22, cursor: 'pointer',
+  display: 'flex', alignItems: 'center', justifyContent: 'center',
+  color: '#fff', fontSize: 14, lineHeight: 1, fontWeight: 700,
 }

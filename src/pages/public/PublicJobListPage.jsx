@@ -3,26 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useJobs } from '../../hooks/useJobs'
 import { useCategories } from '../../hooks/useCategories'
 import { useSavedJobs } from '../../hooks/useSavedJobs'
-import { formatDate } from '../../utils/formatters'
-
-function formatSalaryRange(job) {
-  const { salary, salaryMin, salaryMax } = job || {}
-  if (salaryMin != null && salaryMax != null) {
-    return `${formatMillions(salaryMin)} - ${formatMillions(salaryMax)}`
-  }
-  if (salaryMin != null) return `Từ ${formatMillions(salaryMin)}`
-  if (salaryMax != null) return `Đến ${formatMillions(salaryMax)}`
-  if (salary != null) {
-    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(salary)
-  }
-  return 'Thỏa thuận'
-}
-
-function formatMillions(value) {
-  if (value == null) return '0'
-  const millions = Number(value) / 1_000_000
-  return millions % 1 === 0 ? `${millions}tr` : `${millions.toFixed(1)}tr`
-}
+import { formatDate, getJobTypeLabel } from '../../utils/formatters'
 
 export default function PublicJobListPage() {
   const navigate = useNavigate()
@@ -37,32 +18,23 @@ export default function PublicJobListPage() {
   const { categories } = useCategories('JOB')
   const { toggle, isSaved } = useSavedJobs()
 
-  const [keywordInput, setKeywordInput] = useState(initKeyword)
+  const [keywordInput, setKeywordInput]   = useState(initKeyword)
   const [locationInput, setLocationInput] = useState('')
-  const [salaryMin, setSalaryMin] = useState('')
-  const [salaryMax, setSalaryMax] = useState('')
 
   const handleSearch = () => {
-    updateParams({
-      keyword:   keywordInput,
-      location:  locationInput,
-      salaryMin: salaryMin || undefined,
-      salaryMax: salaryMax || undefined,
-    })
+    updateParams({ keyword: keywordInput, location: locationInput })
   }
 
   const handleReset = () => {
     setKeywordInput('')
     setLocationInput('')
-    setSalaryMin('')
-    setSalaryMax('')
-    updateParams({ keyword: '', location: '', salaryMin: '', salaryMax: '', categoryId: '', sort: 'createdAt,desc' })
+    updateParams({ keyword: '', location: '', categoryId: '', sort: 'createdAt,desc' })
   }
 
-  const jobs      = data?.content || []
-  const total     = data?.totalElements || 0
+  const jobs       = data?.content || []
+  const total      = data?.totalElements || 0
   const totalPages = data?.totalPages || 0
-  const curPage   = data?.number || 0
+  const curPage    = data?.number || 0
 
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto', padding: '40px 24px' }}>
@@ -88,6 +60,7 @@ export default function PublicJobListPage() {
             <input
               value={locationInput}
               onChange={(e) => setLocationInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
               placeholder="TP.HCM, Hà Nội..."
               style={inputStyle}
             />
@@ -104,19 +77,10 @@ export default function PublicJobListPage() {
             </select>
           </FilterGroup>
 
-          <FilterGroup label="Khoảng lương (triệu VNĐ)">
-            <div style={{ display: 'flex', gap: 8 }}>
-              <input type="number" value={salaryMin} onChange={(e) => setSalaryMin(e.target.value)} placeholder="Từ" style={{ ...inputStyle, width: '50%' }} />
-              <input type="number" value={salaryMax} onChange={(e) => setSalaryMax(e.target.value)} placeholder="Đến" style={{ ...inputStyle, width: '50%' }} />
-            </div>
-          </FilterGroup>
-
           <FilterGroup label="Sắp xếp">
             <select value={params.sort} onChange={(e) => updateParams({ sort: e.target.value })} style={inputStyle}>
               <option value="createdAt,desc">Mới nhất</option>
               <option value="createdAt,asc">Cũ nhất</option>
-              <option value="salary,desc">Lương cao nhất</option>
-              <option value="salary,asc">Lương thấp nhất</option>
               <option value="expiresAt,asc">Sắp hết hạn</option>
             </select>
           </FilterGroup>
@@ -154,7 +118,6 @@ export default function PublicJobListPage() {
                 ))}
               </div>
 
-              {/* Pagination */}
               {totalPages > 1 && (
                 <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 32 }}>
                   <button disabled={curPage === 0} onClick={() => setPage(curPage - 1)} style={pageBtnStyle(false)}>‹</button>
@@ -180,29 +143,40 @@ function JobCard({ job, saved, onSave, onClick }) {
       onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.1)'; e.currentTarget.style.transform = 'translateY(-2px)' }}
       onMouseLeave={(e) => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'translateY(0)' }}
     >
-
       <div style={{ padding: 16 }}>
         <button onClick={onSave} style={{ position: 'absolute', top: 12, right: 12, background: 'rgba(255,255,255,0.9)', border: 'none', cursor: 'pointer', padding: 6, borderRadius: 6 }}>
           <BookmarkIcon filled={saved} />
         </button>
 
         <div style={{ fontWeight: 700, fontSize: 14, color: '#1a2340', marginBottom: 6, paddingRight: 28, lineHeight: 1.4 }}>{job.title}</div>
+        {job.companyName && (
+          <div style={{ fontSize: 12, color: '#374151', fontWeight: 500, marginBottom: 4 }}>{job.companyName}</div>
+        )}
         <div style={{ fontSize: 12, color: '#1a7a4a', fontWeight: 500, marginBottom: 10 }}>{job.categoryName}</div>
 
         {job.location && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#6b7280', fontSize: 12, marginBottom: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#6b7280', fontSize: 12, marginBottom: 6 }}>
             📍 {job.location}
           </div>
         )}
 
-        {job.expiresAt && (
-          <div style={{ fontSize: 11, color: '#9ca3af', marginBottom: 10 }}>Hết hạn: {formatDate(job.expiresAt)}</div>
+        {job.experienceLevel && (
+          <div style={{ fontSize: 11, color: '#7e22ce', background: '#faf5ff', padding: '2px 8px', borderRadius: 10, display: 'inline-block', marginBottom: 6 }}>
+            🎓 {job.experienceLevel}
+          </div>
         )}
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8, paddingTop: 12, borderTop: '1px solid #f3f4f6' }}>
-          <span style={{ color: '#1a7a4a', fontWeight: 700, fontSize: 14 }}>{formatSalaryRange(job)}</span>
-          {job.salaryType && <span style={{ background: '#f3f4f6', color: '#6b7280', fontSize: 10, fontWeight: 500, padding: '2px 8px', borderRadius: 10 }}>{job.salaryType}</span>}
-        </div>
+        {job.expiresAt && (
+          <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 6 }}>Hết hạn: {formatDate(job.expiresAt)}</div>
+        )}
+
+        {job.jobType && (
+          <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid #f3f4f6' }}>
+            <span style={{ background: '#eff6ff', color: '#1d4ed8', fontSize: 11, fontWeight: 500, padding: '2px 8px', borderRadius: 10 }}>
+              {getJobTypeLabel(job.jobType)}
+            </span>
+          </div>
+        )}
       </div>
     </div>
   )
@@ -229,17 +203,14 @@ const inputStyle = {
   width: '100%', padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: 8,
   fontSize: 13, outline: 'none', boxSizing: 'border-box', color: '#1a2340', background: '#f9fafb'
 }
-
 const btnPrimary = {
   width: '100%', padding: '10px', background: '#1a7a4a', color: '#fff', border: 'none',
   borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', marginBottom: 8
 }
-
 const btnGhost = {
   width: '100%', padding: '10px', background: 'none', color: '#6b7280', border: '1px solid #e5e7eb',
   borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer'
 }
-
 const pageBtnStyle = (active) => ({
   width: 36, height: 36, border: `1px solid ${active ? '#1a7a4a' : '#e5e7eb'}`,
   borderRadius: 8, background: active ? '#1a7a4a' : '#fff', color: active ? '#fff' : '#4b5563',

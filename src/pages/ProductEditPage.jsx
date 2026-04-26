@@ -32,12 +32,15 @@ export default function ProductEditPage() {
     }
   }
 
+  // ✅ Thêm images để ProductForm hiển thị ảnh hiện có
   const defaultValues = product ? {
+    id:           product.id,
     productCode:  product.productCode  || '',
     name:         product.name         || '',
     categoryId:   product.categoryId   || '',
     description:  product.description  || '',
     isActive:     product.isActive !== undefined ? String(product.isActive) : 'true',
+    images:       product.images       || [],
   } : undefined
 
   return (
@@ -58,7 +61,12 @@ export default function ProductEditPage() {
         ) : fetchErr ? (
           <p className="text-red text-sm">{fetchErr}</p>
         ) : (
-          <ProductForm defaultValues={defaultValues} onSubmit={handleSubmit} loading={saving} submitLabel="Lưu thay đổi" />
+          <ProductForm
+            defaultValues={defaultValues}
+            onSubmit={handleSubmit}
+            loading={saving}
+            submitLabel="Lưu thay đổi"
+          />
         )}
       </Card>
     </div>

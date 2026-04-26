@@ -1,43 +1,37 @@
-// src/hooks/useJobs.js
 import { useState, useEffect, useCallback } from 'react'
-import { jobService } from '../services/jobService'
-
-const DEFAULT_PARAMS = {
-  keyword:    '',
-  location:   '',
-  salaryMin:  '',
-  salaryMax:  '',
-  categoryId: '',
-  status:     '',
-  page:       0,
-  size:       9,
-  sort:       'createdAt,desc',
-}
+import { getAllJobs } from '../api/jobApi'
 
 export function useJobs(initialParams = {}) {
-  const [params, setParams]   = useState({ ...DEFAULT_PARAMS, ...initialParams })
+  const [params, setParams] = useState({
+    keyword: '',
+    location: '',
+    categoryId: '',
+    status: '',
+    page: 0,
+    size: 10,
+    sort: 'createdAt,desc',
+    ...initialParams,
+  })
+
   const [data, setData]       = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError]     = useState(null)
 
-  const fetch = useCallback(async (p) => {
-    const current = p || params
+  const fetchJobs = useCallback(() => {
     setLoading(true)
     setError(null)
-    try {
-      const clean = Object.fromEntries(
-        Object.entries(current).filter(([, v]) => v !== '' && v !== null && v !== undefined)
-      )
-      const page = await jobService.search(clean)
-      setData(page)
-    } catch (err) {
-      setError(err?.response?.data?.message || err?.message || 'Lỗi tải danh sách job')
-    } finally {
-      setLoading(false)
-    }
+    const cleanParams = Object.fromEntries(
+      Object.entries(params).filter(([, v]) => v !== '' && v != null)
+    )
+    getAllJobs(cleanParams)
+      .then((res) => setData(res?.data ?? res))
+      .catch((err) => setError(err?.response?.data?.message || err?.message || 'Lỗi tải danh sách việc làm'))
+      .finally(() => setLoading(false))
   }, [params])
 
-  useEffect(() => { fetch(params) }, [params])
+  useEffect(() => {
+    fetchJobs()
+  }, [fetchJobs])
 
   const updateParams = useCallback((newParams) => {
     setParams((prev) => ({ ...prev, ...newParams, page: 0 }))
@@ -47,5 +41,5 @@ export function useJobs(initialParams = {}) {
     setParams((prev) => ({ ...prev, page }))
   }, [])
 
-  return { data, loading, error, params, updateParams, setPage, refetch: fetch }
+  return { data, loading, error, params, updateParams, setPage, refetch: fetchJobs }
 }

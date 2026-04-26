@@ -2,16 +2,16 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { jobService } from '../../services/jobService'
 import { useSavedJobs } from '../../hooks/useSavedJobs'
-import { formatDate, formatDateTime, formatSalaryRange, getJobTypeLabel, getExperienceLevelLabel } from '../../utils/formatters'
+import { formatDate, formatDateTime, getJobTypeLabel } from '../../utils/formatters'
 
 export default function PublicJobDetailPage() {
   const { id }   = useParams()
   const navigate = useNavigate()
   const { toggle, isSaved } = useSavedJobs()
-  const [job, setJob]           = useState(null)
-  const [similar, setSimilar]   = useState([])
-  const [loading, setLoading]   = useState(true)
-  const [error, setError]       = useState(null)
+  const [job, setJob]         = useState(null)
+  const [similar, setSimilar] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError]     = useState(null)
 
   useEffect(() => {
     setLoading(true)
@@ -30,11 +30,9 @@ export default function PublicJobDetailPage() {
   if (error)   return <ErrorState message={error} onBack={() => navigate('/jobs')} />
   if (!job)    return null
 
-  // Dùng job.contactEmail từ backend — không hardcode
-  const applyEmail  = job.contactEmail || ''
-  const subject     = encodeURIComponent(`Ứng tuyển: ${job.title}`)
-  const mailtoHref  = applyEmail ? `mailto:${applyEmail}?subject=${subject}` : '#'
-  const salaryDisplay = formatSalaryRange(job)
+  const applyEmail = job.contactEmail || ''
+  const subject    = encodeURIComponent(`Ứng tuyển: ${job.title}`)
+  const mailtoHref = applyEmail ? `mailto:${applyEmail}?subject=${subject}` : '#'
 
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto', padding: '40px 24px' }}>
@@ -52,42 +50,30 @@ export default function PublicJobDetailPage() {
         <div style={{ flex: 1, minWidth: 0 }}>
           {/* Header Card */}
           <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: 28, marginBottom: 20 }}>
-            <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start', flexWrap: 'wrap' }}>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <h1 style={{ fontSize: 22, fontWeight: 800, color: '#1a2340', margin: '0 0 4px' }}>{job.title}</h1>
-                {job.companyName && (
-                  <div style={{ fontSize: 15, fontWeight: 600, color: '#374151', marginBottom: 6 }}>{job.companyName}</div>
-                )}
-                <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 13, color: '#6b7280' }}>
-                  <span>🏷 {job.categoryName}</span>
-                  {job.location && <span>📍 {job.location}</span>}
-                  {job.expiresAt && <span>⏰ Hết hạn: {formatDate(job.expiresAt)}</span>}
-                  {job.postedAt && <span>📅 Đăng: {formatDateTime(job.postedAt)}</span>}
-                </div>
-                <div style={{ marginTop: 12, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-                  <span style={{ background: '#f0fdf4', color: '#1a7a4a', fontSize: 13, fontWeight: 700, padding: '4px 14px', borderRadius: 20, border: '1px solid #bbf7d0' }}>
-                    💰 {salaryDisplay}
-                  </span>
-                  {job.salaryType && (
-                    <span style={{ background: '#f3f4f6', color: '#374151', fontSize: 12, fontWeight: 500, padding: '4px 12px', borderRadius: 20 }}>
-                      {job.salaryType}
-                    </span>
-                  )}
-                  {job.jobType && (
-                    <span style={{ background: '#eff6ff', color: '#1d4ed8', fontSize: 12, fontWeight: 500, padding: '4px 12px', borderRadius: 20 }}>
-                      {getJobTypeLabel(job.jobType)}
-                    </span>
-                  )}
-                  {job.experienceLevel && (
-                    <span style={{ background: '#faf5ff', color: '#7e22ce', fontSize: 12, fontWeight: 500, padding: '4px 12px', borderRadius: 20 }}>
-                      {getExperienceLevelLabel(job.experienceLevel)}
-                    </span>
-                  )}
-                  <span style={{ background: job.status === 'ACTIVE' ? '#f0fdf4' : '#f3f4f6', color: job.status === 'ACTIVE' ? '#1a7a4a' : '#6b7280', fontSize: 12, fontWeight: 600, padding: '4px 12px', borderRadius: 20 }}>
-                    {job.status === 'ACTIVE' ? 'Đang tuyển' : 'Đã đóng'}
-                  </span>
-                </div>
-              </div>
+            <h1 style={{ fontSize: 22, fontWeight: 800, color: '#1a2340', margin: '0 0 4px' }}>{job.title}</h1>
+            {job.companyName && (
+              <div style={{ fontSize: 15, fontWeight: 600, color: '#374151', marginBottom: 8 }}>{job.companyName}</div>
+            )}
+            <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 13, color: '#6b7280', marginBottom: 12 }}>
+              <span>🏷 {job.categoryName}</span>
+              {job.location && <span>📍 {job.location}</span>}
+              {job.expiresAt && <span>⏰ Hết hạn: {formatDate(job.expiresAt)}</span>}
+              {job.postedAt && <span>📅 Đăng: {formatDateTime(job.postedAt)}</span>}
+            </div>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+              {job.jobType && (
+                <span style={{ background: '#eff6ff', color: '#1d4ed8', fontSize: 12, fontWeight: 500, padding: '4px 12px', borderRadius: 20 }}>
+                  {getJobTypeLabel(job.jobType)}
+                </span>
+              )}
+              {job.experienceLevel && (
+                <span style={{ background: '#faf5ff', color: '#7e22ce', fontSize: 12, fontWeight: 500, padding: '4px 12px', borderRadius: 20 }}>
+                  🎓 {job.experienceLevel}
+                </span>
+              )}
+              <span style={{ background: job.status === 'ACTIVE' ? '#f0fdf4' : '#f3f4f6', color: job.status === 'ACTIVE' ? '#1a7a4a' : '#6b7280', fontSize: 12, fontWeight: 600, padding: '4px 12px', borderRadius: 20 }}>
+                {job.status === 'ACTIVE' ? 'Đang tuyển' : 'Đã đóng'}
+              </span>
             </div>
           </div>
 
@@ -146,12 +132,8 @@ export default function PublicJobDetailPage() {
 
             <hr style={{ border: 'none', borderTop: '1px solid #f3f4f6', margin: '16px 0' }} />
 
-            <InfoRow label="Khoảng lương">
-              <strong style={{ color: '#1a7a4a' }}>{salaryDisplay}</strong>
-            </InfoRow>
-            {job.salaryType     && <InfoRow label="Loại lương">{job.salaryType}</InfoRow>}
             {job.jobType        && <InfoRow label="Hình thức">{getJobTypeLabel(job.jobType)}</InfoRow>}
-            {job.experienceLevel && <InfoRow label="Kinh nghiệm">{getExperienceLevelLabel(job.experienceLevel)}</InfoRow>}
+            {job.experienceLevel && <InfoRow label="Kinh nghiệm">{job.experienceLevel}</InfoRow>}
             {job.location       && <InfoRow label="Địa điểm">{job.location}</InfoRow>}
             {job.expiresAt      && <InfoRow label="Hạn nộp">{formatDate(job.expiresAt)}</InfoRow>}
             {job.postedAt       && <InfoRow label="Ngày đăng">{formatDate(job.postedAt)}</InfoRow>}
@@ -179,8 +161,8 @@ export default function PublicJobDetailPage() {
               >
                 <div style={{ fontWeight: 600, fontSize: 14, color: '#1a2340', marginBottom: 4 }}>{j.title}</div>
                 {j.companyName && <div style={{ fontSize: 12, color: '#374151', marginBottom: 4 }}>{j.companyName}</div>}
-                <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 8 }}>{j.location || '—'}</div>
-                <div style={{ color: '#1a7a4a', fontWeight: 700, fontSize: 13 }}>{formatSalaryRange(j)}</div>
+                <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 4 }}>{j.location || '—'}</div>
+                {j.experienceLevel && <div style={{ fontSize: 11, color: '#7e22ce' }}>🎓 {j.experienceLevel}</div>}
               </div>
             ))}
           </div>
@@ -206,7 +188,6 @@ function SectionTitle({ children }) {
     </h2>
   )
 }
-
 
 function BookmarkIcon({ filled }) {
   return (
