@@ -1,6 +1,8 @@
 package com.example.jobapp.DTOs;
 
+import com.example.jobapp.Entity.JobPosting.ExperienceLevel;
 import com.example.jobapp.Entity.JobPosting.JobStatus;
+import com.example.jobapp.Entity.JobPosting.JobType;
 import jakarta.validation.constraints.*;
 import lombok.*;
 
@@ -10,7 +12,6 @@ import java.time.LocalDateTime;
 
 public class JobPostingDTO {
 
-    // ── Request: Tạo mới ──────────────────────────────────────────────────────
     @Getter @Setter
     public static class CreateRequest {
 
@@ -21,13 +22,31 @@ public class JobPostingDTO {
         @Size(min = 5, max = 200, message = "Tiêu đề từ 5-200 ký tự")
         private String title;
 
+        @Size(max = 200, message = "Tên công ty tối đa 200 ký tự")
+        private String companyName;
+
         @Size(max = 5000, message = "Mô tả tối đa 5000 ký tự")
         private String description;
 
-        private BigDecimal salary;
+        @DecimalMin(value = "0", message = "Lương tối thiểu không được âm")
+        private BigDecimal salaryMin;
+
+        @DecimalMin(value = "0", message = "Lương tối đa không được âm")
+        private BigDecimal salaryMax;
+
+        @Size(max = 50, message = "Loại lương tối đa 50 ký tự")
+        private String salaryType;
+
+        private String benefits;
+
+        private String requirements;
 
         @Size(max = 200, message = "Địa điểm tối đa 200 ký tự")
         private String location;
+
+        private JobType jobType;
+
+        private ExperienceLevel experienceLevel;
 
         @Size(max = 500, message = "URL ảnh tối đa 500 ký tự")
         private String imageUrl;
@@ -35,11 +54,15 @@ public class JobPostingDTO {
         @NotNull(message = "Trạng thái không được để trống")
         private JobStatus status;
 
+        @NotBlank(message = "Email liên hệ không được để trống")
+        @Email(message = "Email liên hệ không đúng định dạng")
+        @Size(max = 255)
+        private String contactEmail;
+
         @Future(message = "Ngày hết hạn phải lớn hơn ngày hiện tại")
         private LocalDate expiresAt;
     }
 
-    // ── Request: Cập nhật (partial update) ───────────────────────────────────
     @Getter @Setter
     public static class UpdateRequest {
         private Integer categoryId;
@@ -47,39 +70,66 @@ public class JobPostingDTO {
         @Size(min = 5, max = 200)
         private String title;
 
+        @Size(max = 200)
+        private String companyName;
+
         @Size(max = 5000)
         private String description;
 
-        private BigDecimal salary;
+        @DecimalMin(value = "0")
+        private BigDecimal salaryMin;
+
+        @DecimalMin(value = "0")
+        private BigDecimal salaryMax;
+
+        @Size(max = 50)
+        private String salaryType;
+
+        private String benefits;
+
+        private String requirements;
 
         @Size(max = 200)
         private String location;
+
+        private JobType jobType;
+
+        private ExperienceLevel experienceLevel;
 
         @Size(max = 500)
         private String imageUrl;
 
         private JobStatus status;
 
+        @Email
+        @Size(max = 255)
+        private String contactEmail;
+
         @Future
         private LocalDate expiresAt;
     }
 
-    // ── Response: Danh sách (gọn) ────────────────────────────────────────────
     @Getter @Setter @Builder
     @NoArgsConstructor @AllArgsConstructor
     public static class SummaryResponse {
         private Integer id;
         private String title;
+        private String companyName;
+        private Integer categoryId;
         private String categoryName;
-        private BigDecimal salary;
+        private BigDecimal salaryMin;
+        private BigDecimal salaryMax;
+        private String salaryType;
+        private JobType jobType;
+        private ExperienceLevel experienceLevel;
         private String location;
         private String imageUrl;
         private JobStatus status;
         private LocalDate expiresAt;
+        private LocalDateTime postedAt;
         private LocalDateTime createdAt;
     }
 
-    // ── Response: Chi tiết ───────────────────────────────────────────────────
     @Getter @Setter @Builder
     @NoArgsConstructor @AllArgsConstructor
     public static class DetailResponse {
@@ -88,12 +138,21 @@ public class JobPostingDTO {
         private String categoryName;
         private Integer adminId;
         private String title;
+        private String companyName;
         private String description;
-        private BigDecimal salary;
+        private BigDecimal salaryMin;
+        private BigDecimal salaryMax;
+        private String salaryType;
+        private JobType jobType;
+        private ExperienceLevel experienceLevel;
+        private String benefits;
+        private String requirements;
         private String location;
         private String imageUrl;
         private JobStatus status;
+        private String contactEmail;
         private LocalDate expiresAt;
+        private LocalDateTime postedAt;
         private LocalDateTime createdAt;
         private LocalDateTime updatedAt;
     }

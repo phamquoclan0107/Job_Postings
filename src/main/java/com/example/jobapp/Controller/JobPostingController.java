@@ -11,16 +11,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 
-/**
- * GET    /api/jobs                   — danh sách đơn giản (không phân trang)
- * GET    /api/jobs/search            — tìm kiếm + phân trang + filter
- * GET    /api/jobs/{id}              — chi tiết
- * POST   /api/jobs                   — tạo mới (cần JWT)
- * PUT    /api/jobs/{id}              — cập nhật (cần JWT)
- * DELETE /api/jobs/{id}              — soft delete (cần JWT)
- */
 @RestController
 @RequestMapping("/api/jobs")
 @RequiredArgsConstructor
@@ -28,45 +21,35 @@ public class JobPostingController {
 
     private final JobPostingService jobService;
 
-    /**
-     * Lấy tất cả job (không phân trang) — dùng cho landing page, widget nhỏ.
-     */
     @GetMapping
-    public ResponseEntity<ApiResponse<List<JobPostingDTO.SummaryResponse>>> getAll() {
-        return ResponseEntity.ok(ApiResponse.ok(jobService.getAll()));
-    }
-
-    /**
-     * Tìm kiếm + Phân trang + Filter.
-     * Query params:
-     *   title      — tìm theo tiêu đề (LIKE, không phân biệt hoa thường)
-     *   categoryId — lọc theo danh mục
-     *   status     — lọc theo trạng thái: ACTIVE | CLOSED
-     *   page       — trang (default 0)
-     *   size       — số bản ghi/trang (default 10)
-     *   sort       — ví dụ: createdAt,desc
-     */
-    @GetMapping("/search")
-    public ResponseEntity<ApiResponse<Page<JobPostingDTO.SummaryResponse>>> search(
-            @RequestParam(required = false) String title,
+    public ResponseEntity<ApiResponse<Page<JobPostingDTO.SummaryResponse>>> getAll(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String location,
+            @RequestParam(required = false) BigDecimal salaryMin,
+            @RequestParam(required = false) BigDecimal salaryMax,
             @RequestParam(required = false) Integer categoryId,
             @RequestParam(required = false) JobStatus status,
             @RequestParam(defaultValue = "0")  int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createdAt,desc") String sort) {
 
-        String[] sortParts  = sort.split(",");
-        Sort.Direction dir  = sortParts.length > 1 && sortParts[1].equalsIgnoreCase("asc")
-                ? Sort.Direction.ASC : Sort.Direction.DESC;
-        Pageable pageable   = PageRequest.of(page, size, Sort.by(dir, sortParts[0]));
-
-        Page<JobPostingDTO.SummaryResponse> result = jobService.search(title, categoryId, status, pageable);
+        Pageable pageable = buildPageable(page, size, sort);
+        Page<JobPostingDTO.SummaryResponse> result = jobService.search(
+                keyword, location, salaryMin, salaryMax, categoryId, status, pageable);
         return ResponseEntity.ok(ApiResponse.ok(result));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<JobPostingDTO.DetailResponse>> getById(@PathVariable Integer id) {
+    public ResponseEntity<ApiResponse<JobPostingDTO.DetailResponse>> getById(
+            @PathVariable Integer id) {
         return ResponseEntity.ok(ApiResponse.ok(jobService.getById(id)));
+    }
+
+    @GetMapping("/{id}/similar")
+    public ResponseEntity<ApiResponse<List<JobPostingDTO.SummaryResponse>>> getSimilar(
+            @PathVariable Integer id,
+            @RequestParam(defaultValue = "4") int limit) {
+        return ResponseEntity.ok(ApiResponse.ok(jobService.getSimilar(id, limit)));
     }
 
     @PostMapping
@@ -91,5 +74,12 @@ public class JobPostingController {
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Integer id) {
         jobService.delete(id);
         return ResponseEntity.ok(ApiResponse.noContent("Xóa tin tuyển dụng thành công"));
+    }
+
+    private Pageable buildPageable(int page, int size, String sort) {
+        String[] parts = sort.split(",");
+        Sort.Direction dir = parts.length > 1 && parts[1].equalsIgnoreCase("asc")
+                ? Sort.Direction.ASC : Sort.Direction.DESC;
+        return PageRequest.of(page, size, Sort.by(dir, parts[0]));
     }
 }

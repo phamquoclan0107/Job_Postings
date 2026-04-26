@@ -13,11 +13,11 @@ import java.time.LocalDateTime;
 @Table(
         name = "job_postings",
         indexes = {
-                @Index(name = "idx_job_status",     columnList = "status"),
-                @Index(name = "idx_job_category",   columnList = "category_id"),
-                @Index(name = "idx_job_expires",    columnList = "expires_at"),
-                @Index(name = "idx_job_deleted",    columnList = "deleted_at"),
-                @Index(name = "idx_job_title",      columnList = "title")
+                @Index(name = "idx_job_status",    columnList = "status"),
+                @Index(name = "idx_job_category",  columnList = "category_id"),
+                @Index(name = "idx_job_expires",   columnList = "expires_at"),
+                @Index(name = "idx_job_deleted",   columnList = "deleted_at"),
+                @Index(name = "idx_job_title",     columnList = "title")
         }
 )
 @Getter @Setter
@@ -42,14 +42,38 @@ public class JobPosting {
     @Column(name = "title", nullable = false, length = 200)
     private String title;
 
+    @Column(name = "company_name", length = 200)
+    private String companyName;
+
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
-    @Column(name = "salary", precision = 18, scale = 2)
-    private BigDecimal salary;
+    // Dùng khoảng lương — bỏ field salary đơn lẻ
+    @Column(name = "salary_min", precision = 18, scale = 2)
+    private BigDecimal salaryMin;
+
+    @Column(name = "salary_max", precision = 18, scale = 2)
+    private BigDecimal salaryMax;
+
+    @Column(name = "salary_type", length = 50)
+    private String salaryType;
+
+    @Column(name = "benefits", columnDefinition = "TEXT")
+    private String benefits;
+
+    @Column(name = "requirements", columnDefinition = "TEXT")
+    private String requirements;
 
     @Column(name = "location", length = 200)
     private String location;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "job_type", length = 50)
+    private JobType jobType;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "experience_level", length = 50)
+    private ExperienceLevel experienceLevel;
 
     @Column(name = "image_url", length = 500)
     private String imageUrl;
@@ -59,10 +83,15 @@ public class JobPosting {
             columnDefinition = "ENUM('ACTIVE','CLOSED') DEFAULT 'ACTIVE'")
     private JobStatus status;
 
+    @Column(name = "contact_email", nullable = false, length = 255)
+    private String contactEmail;
+
     @Column(name = "expires_at")
     private LocalDate expiresAt;
 
-    // ✅ Soft delete
+    @Column(name = "posted_at")
+    private LocalDateTime postedAt;
+
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
@@ -74,12 +103,29 @@ public class JobPosting {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
-    // ✅ FIX: Uppercase theo yêu cầu
     public enum JobStatus {
         ACTIVE, CLOSED
     }
 
+    public enum JobType {
+        FULL_TIME, PART_TIME, CONTRACT, REMOTE, INTERNSHIP
+    }
+
+    public enum ExperienceLevel {
+        FRESHER, JUNIOR, MID, SENIOR, LEAD
+    }
+
     public boolean isDeleted() {
         return deletedAt != null;
+    }
+
+    @PrePersist
+    protected void onPrePersist() {
+        if (status == null) {
+            status = JobStatus.ACTIVE;
+        }
+        if (postedAt == null) {
+            postedAt = LocalDateTime.now();
+        }
     }
 }
