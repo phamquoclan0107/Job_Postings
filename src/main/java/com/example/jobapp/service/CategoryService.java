@@ -37,6 +37,13 @@ public class CategoryService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public CategoryDTO.Response getById(Integer id) {
+        Category category = categoryRepo.findById(id)
+                .orElseThrow(() -> AppException.notFound("Danh mục không tồn tại: " + id));
+        return mapper.toResponse(category);
+    }
+
     public CategoryDTO.Response create(CategoryDTO.Request req) {
         String type = req.getType() != null ? req.getType().toUpperCase() : null;
         if (type == null || (!type.equals(Category.TYPE_JOB) && !type.equals(Category.TYPE_PRODUCT))) {

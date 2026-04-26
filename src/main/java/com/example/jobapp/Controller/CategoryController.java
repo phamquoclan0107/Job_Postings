@@ -27,6 +27,12 @@ public class CategoryController {
         return ResponseEntity.ok(ApiResponse.ok(result));
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<ApiResponse<CategoryDTO.Response>> getById(
+            @PathVariable Integer id) {
+        return ResponseEntity.ok(ApiResponse.ok(categoryService.getById(id)));
+    }
+
     @PostMapping
     public ResponseEntity<ApiResponse<CategoryDTO.Response>> create(
             @Valid @RequestBody CategoryDTO.Request req) {

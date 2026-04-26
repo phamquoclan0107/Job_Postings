@@ -15,6 +15,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -61,14 +63,33 @@ public class JobPostingService {
             JobStatus status,
             Pageable pageable) {
 
-        return jobRepo.search(
-                        isBlank(keyword)  ? null : keyword,
-                        isBlank(location) ? null : location,
-                        categoryId,
-                        status,
-                        pageable
-                )
-                .map(mapper::toSummary);
+        // Bước 1: lấy Page<JobPosting> (chỉ dùng COUNT query, không JOIN FETCH)
+        Page<JobPosting> page = jobRepo.searchPage(
+                isBlank(keyword)  ? null : keyword,
+                isBlank(location) ? null : location,
+                categoryId,
+                status,
+                pageable
+        );
+
+        // Bước 2: fetch lại đầy đủ associations bằng IN query để tránh N+1
+        List<Integer> ids = page.getContent().stream()
+                .map(JobPosting::getId)
+                .toList();
+
+        List<JobPosting> fetched = ids.isEmpty()
+                ? List.of()
+                : jobRepo.findByIds(ids);
+
+        // Giữ đúng thứ tự của page gốc
+        Map<Integer, JobPosting> byId = fetched.stream()
+                .collect(Collectors.toMap(JobPosting::getId, j -> j));
+
+        List<JobPostingDTO.SummaryResponse> content = page.getContent().stream()
+                .map(j -> mapper.toSummary(byId.getOrDefault(j.getId(), j)))
+                .toList();
+
+        return new PageImpl<>(content, pageable, page.getTotalElements());
     }
 
     public JobPostingDTO.DetailResponse create(JobPostingDTO.CreateRequest req) {
@@ -87,7 +108,6 @@ public class JobPostingService {
                 .admin(admin)
                 .category(category)
                 .title(req.getTitle())
-//                .companyName(req.getCompanyName())
                 .description(req.getDescription())
                 .jobType(req.getJobType())
                 .experienceLevel(req.getExperienceLevel())
@@ -117,7 +137,6 @@ public class JobPostingService {
             job.setCategory(cat);
         }
         if (req.getTitle()           != null) job.setTitle(req.getTitle());
-//        if (req.getCompanyName()     != null) job.setCompanyName(req.getCompanyName());
         if (req.getDescription()     != null) job.setDescription(req.getDescription());
         if (req.getJobType()         != null) job.setJobType(req.getJobType());
         if (req.getExperienceLevel() != null) job.setExperienceLevel(req.getExperienceLevel());

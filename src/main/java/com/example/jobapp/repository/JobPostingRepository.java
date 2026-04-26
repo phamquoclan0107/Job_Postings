@@ -46,13 +46,19 @@ public interface JobPostingRepository extends JpaRepository<JobPosting, Integer>
                     "AND (:location IS NULL OR LOWER(j.location) LIKE LOWER(CONCAT('%', :location, '%'))) " +
                     "AND (:categoryId IS NULL OR j.category.id = :categoryId) " +
                     "AND (:status IS NULL OR j.status = :status)")
-    Page<JobPosting> search(
+    Page<JobPosting> searchPage(
             @Param("keyword")    String keyword,
             @Param("location")   String location,
             @Param("categoryId") Integer categoryId,
             @Param("status")     JobStatus status,
             Pageable pageable
     );
+
+    @Query("SELECT j FROM JobPosting j " +
+            "JOIN FETCH j.category c " +
+            "JOIN FETCH j.admin a " +
+            "WHERE j.id IN :ids")
+    List<JobPosting> findByIds(@Param("ids") List<Integer> ids);
 
     @Query("SELECT j FROM JobPosting j " +
             "JOIN FETCH j.category c " +
