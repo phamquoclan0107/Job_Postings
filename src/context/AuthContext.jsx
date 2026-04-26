@@ -18,10 +18,15 @@ export function AuthProvider({ children }) {
     setAdmin(null)
   }, [])
 
+  // Cập nhật admin info trong context (sau khi update profile)
+  const refreshAdmin = useCallback((newInfo) => {
+    setAdmin((prev) => ({ ...prev, ...newInfo }))
+  }, [])
+
   const isLoggedIn = !!admin
 
   return (
-    <AuthContext.Provider value={{ admin, login, logout, isLoggedIn }}>
+    <AuthContext.Provider value={{ admin, login, logout, isLoggedIn, refreshAdmin }}>
       {children}
     </AuthContext.Provider>
   )

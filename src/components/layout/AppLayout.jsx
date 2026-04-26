@@ -75,19 +75,35 @@ export default function AppLayout() {
           ))}
         </nav>
 
-        {/* Bottom: user + logout */}
+        {/* Bottom: user + profile + logout */}
         <div style={{ borderTop: '1px solid #f3f4f6', padding: '12px 8px' }}>
-          {!collapsed && admin && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', marginBottom: 4 }}>
-              <div style={{ width: 30, height: 30, borderRadius: 6, background: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 13, color: '#374151', flexShrink: 0 }}>
-                {admin.username?.[0]?.toUpperCase()}
-              </div>
+          {/* Profile link — click vào avatar/username */}
+          <NavLink
+            to="/admin/profile"
+            title="Tài khoản của tôi"
+            style={({ isActive }) => ({
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              padding: '8px 12px',
+              marginBottom: 4,
+              borderRadius: 8,
+              textDecoration: 'none',
+              background: isActive ? '#f3f4f6' : 'transparent',
+              transition: 'background 0.15s',
+            })}
+          >
+            <div style={{ width: 30, height: 30, borderRadius: 6, background: '#111827', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 13, color: '#fff', flexShrink: 0 }}>
+              {admin?.username?.[0]?.toUpperCase() || 'A'}
+            </div>
+            {!collapsed && admin && (
               <div style={{ minWidth: 0 }}>
                 <div style={{ fontSize: 13, fontWeight: 600, color: '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{admin.username}</div>
                 <div style={{ fontSize: 11, color: '#9ca3af' }}>{admin.email || 'Admin'}</div>
               </div>
-            </div>
-          )}
+            )}
+          </NavLink>
+
           <button
             onClick={handleLogout}
             title="Đăng xuất"

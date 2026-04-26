@@ -25,7 +25,7 @@ import JobDetailPage from '../pages/JobDetailPage'
 import JobCreatePage from '../pages/JobCreatePage'
 import JobEditPage from '../pages/JobEditPage'
 
-// Admin — Product pages (tách riêng)
+// Admin — Product pages
 import AdminProductListPage from '../pages/AdminProductListPage'
 import AdminProductDetailPage from '../pages/AdminProductDetailPage'
 import ProductCreatePage from '../pages/ProductCreatePage'
@@ -33,6 +33,7 @@ import ProductEditPage from '../pages/ProductEditPage'
 
 // Admin — Other
 import CategoryPage from '../pages/CategoryPage'
+import ProfilePage from '../pages/ProfilePage'
 
 function PrivateRoute({ children }) {
   const { isLoggedIn } = useAuth()
@@ -74,7 +75,7 @@ export default function AppRoutes() {
         <Route path="jobs/:id"          element={<JobDetailPage />} />
         <Route path="jobs/:id/edit"     element={<JobEditPage />} />
 
-        {/* ── Sản phẩm (tách riêng) ── */}
+        {/* ── Sản phẩm ── */}
         <Route path="products"          element={<AdminProductListPage />} />
         <Route path="products/create"   element={<ProductCreatePage />} />
         <Route path="products/:id"      element={<AdminProductDetailPage />} />
@@ -82,6 +83,9 @@ export default function AppRoutes() {
 
         {/* ── Danh mục ── */}
         <Route path="categories"        element={<CategoryPage />} />
+
+        {/* ── Tài khoản ── */}
+        <Route path="profile"           element={<ProfilePage />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />
