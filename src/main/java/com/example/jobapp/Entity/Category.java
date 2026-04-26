@@ -37,6 +37,6 @@ public class Category {
 
     // ✅ FIX: Uppercase theo yêu cầu
     public enum CategoryType {
-        JOB, PRODUCT
+        job, product
     }
 }

@@ -10,7 +10,6 @@ import java.time.LocalDateTime;
 
 public class JobPostingDTO {
 
-    // ── Request: Tạo mới ──────────────────────────────────────────────────────
     @Getter @Setter
     public static class CreateRequest {
 
@@ -39,7 +38,6 @@ public class JobPostingDTO {
         private LocalDate expiresAt;
     }
 
-    // ── Request: Cập nhật (partial update) ───────────────────────────────────
     @Getter @Setter
     public static class UpdateRequest {
         private Integer categoryId;
@@ -64,12 +62,12 @@ public class JobPostingDTO {
         private LocalDate expiresAt;
     }
 
-    // ── Response: Danh sách (gọn) ────────────────────────────────────────────
     @Getter @Setter @Builder
     @NoArgsConstructor @AllArgsConstructor
     public static class SummaryResponse {
         private Integer id;
         private String title;
+        private Integer categoryId;
         private String categoryName;
         private BigDecimal salary;
         private String location;
@@ -79,7 +77,6 @@ public class JobPostingDTO {
         private LocalDateTime createdAt;
     }
 
-    // ── Response: Chi tiết ───────────────────────────────────────────────────
     @Getter @Setter @Builder
     @NoArgsConstructor @AllArgsConstructor
     public static class DetailResponse {

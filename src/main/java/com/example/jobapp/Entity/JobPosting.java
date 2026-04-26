@@ -48,6 +48,21 @@ public class JobPosting {
     @Column(name = "salary", precision = 18, scale = 2)
     private BigDecimal salary;
 
+    @Column(name = "salary_min", precision = 18, scale = 2)
+    private BigDecimal salaryMin;
+
+    @Column(name = "salary_max", precision = 18, scale = 2)
+    private BigDecimal salaryMax;
+
+    @Column(name = "salary_type", length = 50)
+    private String salaryType;
+
+    @Column(name = "benefits", columnDefinition = "TEXT")
+    private String benefits;
+
+    @Column(name = "requirements", columnDefinition = "TEXT")
+    private String requirements;
+
     @Column(name = "location", length = 200)
     private String location;
 
@@ -62,7 +77,9 @@ public class JobPosting {
     @Column(name = "expires_at")
     private LocalDate expiresAt;
 
-    // ✅ Soft delete
+    @Column(name = "posted_at")
+    private LocalDateTime postedAt;
+
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
@@ -74,12 +91,26 @@ public class JobPosting {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
-    // ✅ FIX: Uppercase theo yêu cầu
     public enum JobStatus {
         ACTIVE, CLOSED
     }
 
     public boolean isDeleted() {
         return deletedAt != null;
+    }
+
+    @PrePersist
+    protected void onPrePersist() {
+        if (status == null) {
+            status = JobStatus.ACTIVE;
+        }
+        if (postedAt == null) {
+            postedAt = LocalDateTime.now();
+        }
+    }
+
+    @PreUpdate
+    protected void onPreUpdate() {
+        // updatedAt handled by @UpdateTimestamp
     }
 }

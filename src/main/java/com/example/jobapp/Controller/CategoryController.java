@@ -29,10 +29,14 @@ public class CategoryController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<CategoryDTO.Response>>> getAll(
-            @RequestParam(required = false) CategoryType type) {
+            @RequestParam(required = false) String type) {
 
-        List<CategoryDTO.Response> data = (type != null)
-                ? categoryService.getByType(type)
+        CategoryType parsedType = (type != null)
+                ? CategoryType.valueOf(type.toUpperCase())
+                : null;
+
+        List<CategoryDTO.Response> data = (parsedType != null)
+                ? categoryService.getByType(parsedType)
                 : categoryService.getAll();
 
         return ResponseEntity.ok(ApiResponse.ok(data));

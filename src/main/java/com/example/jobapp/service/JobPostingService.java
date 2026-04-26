@@ -13,6 +13,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -26,8 +27,6 @@ public class JobPostingService {
     private final CategoryRepository   categoryRepo;
     private final AdminRepository      adminRepo;
     private final JobPostingMapper     mapper;
-
-    // ─── Read ──────────────────────────────────────────────────────────────────
 
     @Transactional(readOnly = true)
     public List<JobPostingDTO.SummaryResponse> getAll() {
@@ -44,19 +43,32 @@ public class JobPostingService {
         return mapper.toDetail(job);
     }
 
-    /**
-     * Pagination + Search theo title + Filter theo category/status.
-     * GET /api/jobs?title=Java&categoryId=1&status=ACTIVE&page=0&size=10&sort=createdAt,desc
-     */
+    @Transactional(readOnly = true)
+    public List<JobPostingDTO.SummaryResponse> getSimilar(Integer id, int limit) {
+        JobPosting job = jobRepo.findActiveById(id)
+                .orElseThrow(() -> AppException.notFound("Job Posting không tồn tại: " + id));
+        Pageable pageable = PageRequest.of(0, limit);
+        return jobRepo.findSimilar(job.getCategory().getId(), id, pageable)
+                .stream()
+                .map(mapper::toSummary)
+                .toList();
+    }
+
     @Transactional(readOnly = true)
     public Page<JobPostingDTO.SummaryResponse> search(
-            String title,
+            String keyword,
+            String location,
+            BigDecimal salaryMin,
+            BigDecimal salaryMax,
             Integer categoryId,
             JobStatus status,
             Pageable pageable) {
 
         return jobRepo.search(
-                        title    == null || title.isBlank() ? null : title,
+                        isBlank(keyword)  ? null : keyword,
+                        isBlank(location) ? null : location,
+                        salaryMin,
+                        salaryMax,
                         categoryId,
                         status,
                         pageable
@@ -64,10 +76,7 @@ public class JobPostingService {
                 .map(mapper::toSummary);
     }
 
-    // ─── Write ─────────────────────────────────────────────────────────────────
-
     public JobPostingDTO.DetailResponse create(JobPostingDTO.CreateRequest req) {
-        // Lấy admin từ JWT (SecurityContext)
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         Admin admin = adminRepo.findByUsername(username)
                 .orElseThrow(() -> AppException.notFound("Admin không tồn tại"));
@@ -114,14 +123,15 @@ public class JobPostingService {
         return mapper.toDetail(saved);
     }
 
-    /**
-     * ✅ Soft delete — chỉ set deletedAt, không xóa DB.
-     */
     public void delete(Integer id) {
         if (jobRepo.findActiveById(id).isEmpty()) {
             throw AppException.notFound("Job Posting không tồn tại: " + id);
         }
         jobRepo.softDelete(id, LocalDateTime.now());
         log.info("Job soft-deleted: id={}", id);
+    }
+
+    private boolean isBlank(String s) {
+        return s == null || s.isBlank();
     }
 }

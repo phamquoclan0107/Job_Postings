@@ -7,35 +7,36 @@ import org.springframework.stereotype.Component;
 @Component
 public class JobPostingMapper {
 
-    public JobPostingDTO.SummaryResponse toSummary(JobPosting j) {
+    public JobPostingDTO.SummaryResponse toSummary(JobPosting job) {
         return JobPostingDTO.SummaryResponse.builder()
-                .id(j.getId())
-                .title(j.getTitle())
-                .categoryName(j.getCategory().getName())
-                .salary(j.getSalary())
-                .location(j.getLocation())
-                .imageUrl(j.getImageUrl())
-                .status(j.getStatus())
-                .expiresAt(j.getExpiresAt())
-                .createdAt(j.getCreatedAt())
+                .id(job.getId())
+                .title(job.getTitle())
+                .categoryName(job.getCategory() != null ? job.getCategory().getName() : null)
+                .categoryId(job.getCategory() != null ? job.getCategory().getId() : null)
+                .salary(job.getSalary())
+                .location(job.getLocation())
+                .imageUrl(job.getImageUrl())
+                .status(job.getStatus())
+                .expiresAt(job.getExpiresAt())
+                .createdAt(job.getCreatedAt())
                 .build();
     }
 
-    public JobPostingDTO.DetailResponse toDetail(JobPosting j) {
+    public JobPostingDTO.DetailResponse toDetail(JobPosting job) {
         return JobPostingDTO.DetailResponse.builder()
-                .id(j.getId())
-                .categoryId(j.getCategory().getId())
-                .categoryName(j.getCategory().getName())
-                .adminId(j.getAdmin().getId())
-                .title(j.getTitle())
-                .description(j.getDescription())
-                .salary(j.getSalary())
-                .location(j.getLocation())
-                .imageUrl(j.getImageUrl())
-                .status(j.getStatus())
-                .expiresAt(j.getExpiresAt())
-                .createdAt(j.getCreatedAt())
-                .updatedAt(j.getUpdatedAt())
+                .id(job.getId())
+                .categoryId(job.getCategory() != null ? job.getCategory().getId() : null)
+                .categoryName(job.getCategory() != null ? job.getCategory().getName() : null)
+                .adminId(job.getAdmin() != null ? job.getAdmin().getId() : null)
+                .title(job.getTitle())
+                .description(job.getDescription())
+                .salary(job.getSalary())
+                .location(job.getLocation())
+                .imageUrl(job.getImageUrl())
+                .status(job.getStatus())
+                .expiresAt(job.getExpiresAt())
+                .createdAt(job.getCreatedAt())
+                .updatedAt(job.getUpdatedAt())
                 .build();
     }
 }
