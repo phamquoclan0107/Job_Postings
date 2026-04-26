@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { productService } from '../services/productService'
 import ProductForm from '../components/product/ProductForm'
@@ -32,16 +32,18 @@ export default function ProductEditPage() {
     }
   }
 
-  // ✅ Thêm images để ProductForm hiển thị ảnh hiện có
-  const defaultValues = product ? {
-    id:           product.id,
-    productCode:  product.productCode  || '',
-    name:         product.name         || '',
-    categoryId:   product.categoryId   || '',
-    description:  product.description  || '',
-    isActive:     product.isActive !== undefined ? String(product.isActive) : 'true',
-    images:       product.images       || [],
-  } : undefined
+  const defaultValues = useMemo(() => {
+    if (!product) return undefined
+    return {
+      id:           product.id,
+      productCode:  product.productCode  || '',
+      name:         product.name         || '',
+      categoryId:   product.categoryId   != null ? String(product.categoryId) : '',
+      description:  product.description  || '',
+      isActive:     product.isActive !== undefined ? String(product.isActive) : 'true',
+      images:       product.images       || [],
+    }
+  }, [product])
 
   return (
     <div>

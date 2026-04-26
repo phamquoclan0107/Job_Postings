@@ -6,12 +6,12 @@ const REFRESH_KEY = 'refreshToken'
 const ADMIN_KEY   = 'adminInfo'
 
 export const authService = {
-  // ─── Register ──────────────────────────────────────────────────────────────
+  // ─── Register ────────────────────────────────────────────────────────────
   async register(username, email, password, confirmPassword) {
     return authApi.register({ username, email, password, confirmPassword })
   },
 
-  // ─── Login ─────────────────────────────────────────────────────────────────
+  // ─── Login ───────────────────────────────────────────────────────────────
   async login(username, password) {
     const res = await authApi.login({ username, password })
     const { accessToken, refreshToken, admin } = res.data
@@ -21,7 +21,7 @@ export const authService = {
     return admin
   },
 
-  // ─── Logout ────────────────────────────────────────────────────────────────
+  // ─── Logout ──────────────────────────────────────────────────────────────
   logout() {
     localStorage.removeItem(TOKEN_KEY)
     localStorage.removeItem(REFRESH_KEY)
@@ -35,32 +35,34 @@ export const authService = {
     return raw ? JSON.parse(raw) : null
   },
 
-  // ─── Change Password ───────────────────────────────────────────────────────
-  // FE gửi: oldPassword + newPassword + confirmPassword
-  // BE nhận qua DTO → verify → hash → lưu password_hash
+  // ─── Get Profile ─────────────────────────────────────────────────────────
+  async getProfile() {
+    return authApi.getProfile()
+  },
+
+  // ─── Update Profile — MỞ RỘNG: fullName, phone ───────────────────────────
+  async updateProfile(payload) {
+    const res = await authApi.updateProfile(payload)
+    // Cập nhật localStorage với dữ liệu mới từ server
+    const updated = res?.data || res
+    const current = this.getAdmin()
+    if (current) {
+      localStorage.setItem(ADMIN_KEY, JSON.stringify({ ...current, ...updated }))
+    }
+    return res  // trả về nguyên response để ProfileTab tự xử lý
+  },
+
+  // ─── Change Password ─────────────────────────────────────────────────────
   async changePassword(oldPassword, newPassword, confirmPassword) {
     return authApi.changePassword({ oldPassword, newPassword, confirmPassword })
   },
 
-  // ─── Forgot Password — B1: yêu cầu OTP ────────────────────────────────────
+  // ─── Forgot Password ─────────────────────────────────────────────────────
   async forgotPassword(email) {
     return authApi.forgotPassword({ email })
   },
 
-  // ─── Forgot Password — B2: xác thực OTP + đặt mật khẩu mới ───────────────
-  // FE gửi: email + otp + newPassword + confirmPassword
-  // BE nhận qua DTO → verify OTP → hash → lưu password_hash
   async resetPassword(email, otp, newPassword, confirmPassword) {
     return authApi.resetPassword({ email, otp, newPassword, confirmPassword })
-  },
-
-  // ─── Update Profile ────────────────────────────────────────────────────────
-  async updateProfile(payload) {
-    const res = await authApi.updateProfile(payload)
-    const current = this.getAdmin()
-    if (current) {
-      localStorage.setItem(ADMIN_KEY, JSON.stringify({ ...current, ...res.data }))
-    }
-    return res.data
   },
 }

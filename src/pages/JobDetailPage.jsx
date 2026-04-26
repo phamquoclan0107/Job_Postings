@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { jobService } from '../services/jobService'
 import { Button, Badge, Card, Spinner, PageTitle } from '../components/ui'
-import { formatDate, formatDateTime, formatSalary, getStatusLabel, getStatusColor } from '../utils/formatters'
+import { formatDate, formatDateTime, getStatusLabel, getStatusColor, getIncomeLevelLabel } from '../utils/formatters'
 
 export default function JobDetailPage() {
   const { id }   = useParams()
@@ -25,8 +25,6 @@ export default function JobDetailPage() {
   if (loading) return <div className="flex justify-center items-center py-20"><Spinner size={36} /></div>
   if (error)   return <div className="flex justify-center items-center py-20 text-red text-sm">{error}</div>
   if (!job)    return null
-
-  const salaryRange = formatSalaryRange(job)
 
   return (
     <div>
@@ -77,8 +75,7 @@ export default function JobDetailPage() {
             <h3 className="font-head text-[15px] font-bold text-text-pri mb-3.5">Thông tin chung</h3>
             <InfoRow label="Trạng thái"><Badge color={getStatusColor(job.status)}>{getStatusLabel(job.status)}</Badge></InfoRow>
             <InfoRow label="Danh mục">{job.categoryName || '—'}</InfoRow>
-            <InfoRow label="Khoảng lương">{salaryRange}</InfoRow>
-            {job.salaryType && <InfoRow label="Loại lương">{job.salaryType}</InfoRow>}
+            <InfoRow label="Mức thu nhập">{getIncomeLevelLabel(job.incomeLevel)}</InfoRow>
             <InfoRow label="Địa điểm">{job.location || '—'}</InfoRow>
             <InfoRow label="Hết hạn">{formatDate(job.expiresAt)}</InfoRow>
             {job.postedAt && <InfoRow label="Ngày đăng">{formatDateTime(job.postedAt)}</InfoRow>}
@@ -95,23 +92,6 @@ export default function JobDetailPage() {
       </div>
     </div>
   )
-}
-
-function formatSalaryRange(job) {
-  const { salary, salaryMin, salaryMax } = job
-  if (salaryMin != null && salaryMax != null) {
-    return `${formatMillions(salaryMin)} - ${formatMillions(salaryMax)}`
-  }
-  if (salaryMin != null) return `Từ ${formatMillions(salaryMin)}`
-  if (salaryMax != null) return `Đến ${formatMillions(salaryMax)}`
-  if (salary != null) return formatSalary(salary)
-  return 'Thỏa thuận'
-}
-
-function formatMillions(value) {
-  if (!value) return '0'
-  const millions = Number(value) / 1_000_000
-  return millions % 1 === 0 ? `${millions}tr` : `${millions.toFixed(1)}tr`
 }
 
 function InfoRow({ label, children }) {

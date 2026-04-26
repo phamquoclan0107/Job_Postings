@@ -25,7 +25,7 @@ const formatMillions = (value) => {
   return millions % 1 === 0 ? `${millions}tr` : `${millions.toFixed(1)}tr`
 }
 
-// Dùng ở MỌI chỗ hiển thị lương — thay thế formatSalary cũ
+// Deprecated — giữ lại để tương thích
 export const formatSalaryRange = (job) => {
   const { salary, salaryMin, salaryMax } = job || {}
   if (salaryMin != null && salaryMax != null) {
@@ -39,7 +39,6 @@ export const formatSalaryRange = (job) => {
   return 'Thỏa thuận'
 }
 
-// Giữ lại để tương thích nhưng deprecated — dùng formatSalaryRange thay thế
 export const formatSalary = (salary) => {
   if (!salary) return 'Thỏa thuận'
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(salary)
@@ -80,4 +79,16 @@ export const getExperienceLevelLabel = (level) => {
     LEAD: 'Lead / Manager',
   }
   return map[level] || level
+}
+
+export const getIncomeLevelLabel = (level) => {
+  const map = {
+    THOA_THUAN: 'Thỏa thuận',
+    DUOI_10TR:  'Dưới 10 triệu',
+    TU_10_15TR: '10 - 15 triệu',
+    TU_15_20TR: '15 - 20 triệu',
+    TU_20_30TR: '20 - 30 triệu',
+    TREN_30TR:  'Trên 30 triệu',
+  }
+  return map[level] || level || 'Thỏa thuận'
 }

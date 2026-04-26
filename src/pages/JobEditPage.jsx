@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { jobService } from '../services/jobService'
 import JobForm from '../components/job/JobForm'
@@ -30,20 +30,24 @@ export default function JobEditPage() {
     } finally { setSaving(false) }
   }
 
-  const defaultValues = job ? {
-    title:          job.title          || '',
-    categoryId:     job.categoryId     || '',   // ← thêm
-    jobType:        job.jobType        || '',   // ← thêm
-    contactEmail:   job.contactEmail   || '',   // ← thêm
-    description:    job.description    || '',
-    requirements:   job.requirements   || '',
-    benefits:       job.benefits       || '',
-    location:       job.location       || '',
-    experienceLevel: job.experienceLevel || '',  // ← thêm
-    status:         job.status         || '',
-    expiresAt:      job.expiresAt      || '',
-    imageUrl:       job.imageUrl       || '',
-  } : undefined
+  const defaultValues = useMemo(() => {
+    if (!job) return undefined
+    return {
+      title:           job.title           || '',
+      categoryId:      job.categoryId      != null ? String(job.categoryId) : '',
+      jobType:         job.jobType         || '',
+      contactEmail:    job.contactEmail    || '',
+      description:     job.description     || '',
+      requirements:    job.requirements    || '',
+      benefits:        job.benefits        || '',
+      location:        job.location        || '',
+      experienceLevel: job.experienceLevel || '',
+      incomeLevel:     job.incomeLevel     || '',   // ← THÊM DÒNG NÀY
+      status:          job.status          || '',
+      expiresAt:       job.expiresAt       || '',
+      imageUrl:        job.imageUrl        || '',
+    }
+  }, [job])
 
   return (
     <div>

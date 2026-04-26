@@ -13,15 +13,16 @@ export default function JobForm({ defaultValues, onSubmit, loading, submitLabel 
   } = useForm({ defaultValues })
 
   useEffect(() => {
-    if (defaultValues) {
-      // Ép tất cả ID về string để <option value="..."> match đúng
+    if (defaultValues && !catLoading) {
       reset({
         ...defaultValues,
-        categoryId: defaultValues.categoryId != null ? String(defaultValues.categoryId) : '',
-        jobType:    defaultValues.jobType    || '',
+        categoryId:      defaultValues.categoryId      != null ? String(defaultValues.categoryId) : '',
+        jobType:         defaultValues.jobType         || '',
+        experienceLevel: defaultValues.experienceLevel || '',
+        incomeLevel:     defaultValues.incomeLevel     || '',
       })
     }
-  }, [defaultValues, reset])
+  }, [defaultValues, catLoading, reset])
 
   const handleFormSubmit = (data) => {
     const clean = Object.fromEntries(
@@ -95,7 +96,7 @@ export default function JobForm({ defaultValues, onSubmit, loading, submitLabel 
           </Select>
         </FormField>
 
-        {/* Experience Level — free text */}
+        {/* Experience Level */}
         <FormField label="Cấp độ / Kinh nghiệm" error={errors.experienceLevel?.message}
           hint="Ví dụ: 2-3 năm, Senior, Không yêu cầu kinh nghiệm...">
           <Input
@@ -105,6 +106,19 @@ export default function JobForm({ defaultValues, onSubmit, loading, submitLabel 
               maxLength: { value: 100, message: 'Tối đa 100 ký tự' },
             })}
           />
+        </FormField>
+
+        {/* Income Level — Mức thu nhập */}
+        <FormField label="Mức thu nhập" error={errors.incomeLevel?.message}>
+          <Select error={errors.incomeLevel} {...register('incomeLevel')}>
+            <option value="">-- Chọn mức thu nhập --</option>
+            <option value="THOA_THUAN">Thỏa thuận</option>
+            <option value="DUOI_10TR">Dưới 10 triệu</option>
+            <option value="TU_10_15TR">10 - 15 triệu</option>
+            <option value="TU_15_20TR">15 - 20 triệu</option>
+            <option value="TU_20_30TR">20 - 30 triệu</option>
+            <option value="TREN_30TR">Trên 30 triệu</option>
+          </Select>
         </FormField>
 
         {/* Location */}

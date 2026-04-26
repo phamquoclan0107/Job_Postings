@@ -15,8 +15,8 @@ export function Button({ children, variant = 'primary', size = 'md', loading = f
   const isDisabled = disabled || loading
   const sizes = { sm: 'px-3 py-1.5 text-xs', md: 'px-[18px] py-[9px] text-sm', lg: 'px-6 py-3 text-[15px]' }
   const variants = {
-    primary: 'bg-accent text-black',
-    ghost:   'bg-transparent text-text-sec border border-border-light',
+    primary: 'bg-accent text-white hover:opacity-90',
+    ghost: 'bg-transparent text-text-sec border border-transparent hover:bg-bg hover:text-text-pri',
     danger:  'bg-red/15 text-red border border-red/30',
     success: 'bg-green/15 text-green border border-green/30',
   }

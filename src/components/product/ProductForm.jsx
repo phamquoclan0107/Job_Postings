@@ -9,7 +9,6 @@ export default function ProductForm({
   onSubmit,
   loading,
   submitLabel = 'Lưu',
-  // Create mode: gọi callback này với files đã chọn để page cha tự upload sau khi tạo xong
   onPendingFiles,
 }) {
   const { categories, loading: catLoading, error: catError } = useCategories('PRODUCT')
@@ -17,15 +16,13 @@ export default function ProductForm({
 
   const isEditMode = !!defaultValues?.id
 
-  // Edit mode: ảnh đã có trên server
   const [images, setImages]           = useState(defaultValues?.images || [])
   const [uploading, setUploading]     = useState(false)
   const [uploadError, setUploadError] = useState('')
   const [deletingId, setDeletingId]   = useState(null)
 
-  // Create mode: ảnh chọn trước (chưa upload), preview bằng blob URL
-  const [pendingFiles, setPendingFiles] = useState([])   // File[]
-  const [previews, setPreviews]         = useState([])   // { name, url }[]
+  const [pendingFiles, setPendingFiles] = useState([])
+  const [previews, setPreviews]         = useState([])
 
   const {
     register,
@@ -35,24 +32,25 @@ export default function ProductForm({
   } = useForm({ defaultValues })
 
   useEffect(() => {
-    if (defaultValues) {
-      reset(defaultValues)
+    // Chờ categories load xong mới reset để <select> có đủ option để chọn đúng
+    if (defaultValues && !catLoading) {
+      reset({
+        ...defaultValues,
+        categoryId: defaultValues.categoryId != null ? String(defaultValues.categoryId) : '',
+      })
       if (isEditMode) setImages(defaultValues.images || [])
     }
-  }, [defaultValues, reset, isEditMode])
+  }, [defaultValues, catLoading, reset, isEditMode])
 
-  // Revoke blob URLs khi unmount tránh leak
   useEffect(() => {
     return () => previews.forEach((p) => URL.revokeObjectURL(p.url))
   }, [previews])
 
-  // ── EDIT MODE: upload ngay ─────────────────────────────────────
   const handleFileChange = async (e) => {
     const files = Array.from(e.target.files || [])
     if (!files.length) return
 
     if (!isEditMode) {
-      // CREATE MODE: chỉ preview, không upload
       const newPreviews = files.map((f) => ({ name: f.name, url: URL.createObjectURL(f) }))
       setPendingFiles((prev) => [...prev, ...files])
       setPreviews((prev) => [...prev, ...newPreviews])
@@ -99,7 +97,6 @@ export default function ProductForm({
     if (clean.categoryId) clean.categoryId = Number(clean.categoryId)
     if (clean.isActive !== undefined) clean.isActive = clean.isActive === 'true' || clean.isActive === true
 
-    // Truyền pendingFiles lên page cha (dùng ở create mode)
     if (onPendingFiles) onPendingFiles(pendingFiles)
     onSubmit(clean)
   }
@@ -149,7 +146,9 @@ export default function ProductForm({
                 ? <option value="">Lỗi tải danh mục — thử lại</option>
                 : <>
                     <option value="">-- Chọn danh mục --</option>
-                    {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    {categories.map((c) => (
+                      <option key={c.id} value={String(c.id)}>{c.name}</option>
+                    ))}
                     {categories.length === 0 && <option disabled value="">Chưa có danh mục nào</option>}
                   </>
             }
@@ -178,10 +177,7 @@ export default function ProductForm({
 
         {/* IMAGE SECTION */}
         <div className="col-span-2">
-          <FormField
-            label="Hình ảnh sản phẩm"
-            hint="PNG, JPG, WEBP · tối đa 5MB mỗi ảnh"
-          >
+          <FormField label="Hình ảnh sản phẩm" hint="PNG, JPG, WEBP · tối đa 5MB mỗi ảnh">
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
 
               {/* EDIT MODE: ảnh đã lưu trên server */}
@@ -189,7 +185,8 @@ export default function ProductForm({
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: 10 }}>
                   {images.map((img) => (
                     <div key={img.id} style={thumbWrap}>
-                      <img src={img.imageUrl} alt="" style={thumbImg} onError={(e) => { e.target.style.display = 'none' }} />
+                      {/* FIX: dùng img.url thay vì img.imageUrl */}
+                      <img src={img.url} alt="" style={thumbImg} onError={(e) => { e.target.style.display = 'none' }} />
                       <button type="button" onClick={() => handleDeleteImage(img.id)} disabled={deletingId === img.id} style={deleteBtn} title="Xóa ảnh">
                         {deletingId === img.id ? '…' : '×'}
                       </button>
@@ -205,7 +202,6 @@ export default function ProductForm({
                     <div key={i} style={thumbWrap}>
                       <img src={p.url} alt={p.name} style={thumbImg} />
                       <button type="button" onClick={() => handleRemovePending(i)} style={deleteBtn} title="Bỏ ảnh">×</button>
-                      {/* badge "chưa lưu" */}
                       <div style={{ position: 'absolute', bottom: 4, left: 4, background: 'rgba(0,0,0,0.55)', color: '#fff', fontSize: 9, padding: '1px 5px', borderRadius: 4, fontWeight: 600 }}>
                         PREVIEW
                       </div>
@@ -214,7 +210,7 @@ export default function ProductForm({
                 </div>
               )}
 
-              {/* Nút chọn ảnh — hiển thị cả 2 mode */}
+              {/* Nút chọn ảnh */}
               <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
                 <button
                   type="button"
