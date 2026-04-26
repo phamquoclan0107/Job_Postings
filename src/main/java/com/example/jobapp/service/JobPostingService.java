@@ -63,7 +63,6 @@ public class JobPostingService {
             JobStatus status,
             Pageable pageable) {
 
-        // Bước 1: lấy Page<JobPosting> (chỉ dùng COUNT query, không JOIN FETCH)
         Page<JobPosting> page = jobRepo.searchPage(
                 isBlank(keyword)  ? null : keyword,
                 isBlank(location) ? null : location,
@@ -72,7 +71,6 @@ public class JobPostingService {
                 pageable
         );
 
-        // Bước 2: fetch lại đầy đủ associations bằng IN query để tránh N+1
         List<Integer> ids = page.getContent().stream()
                 .map(JobPosting::getId)
                 .toList();
@@ -81,7 +79,6 @@ public class JobPostingService {
                 ? List.of()
                 : jobRepo.findByIds(ids);
 
-        // Giữ đúng thứ tự của page gốc
         Map<Integer, JobPosting> byId = fetched.stream()
                 .collect(Collectors.toMap(JobPosting::getId, j -> j));
 
@@ -111,6 +108,7 @@ public class JobPostingService {
                 .description(req.getDescription())
                 .jobType(req.getJobType())
                 .experienceLevel(req.getExperienceLevel())
+                .incomeLevel(req.getIncomeLevel())
                 .benefits(req.getBenefits())
                 .requirements(req.getRequirements())
                 .location(req.getLocation())
@@ -140,6 +138,7 @@ public class JobPostingService {
         if (req.getDescription()     != null) job.setDescription(req.getDescription());
         if (req.getJobType()         != null) job.setJobType(req.getJobType());
         if (req.getExperienceLevel() != null) job.setExperienceLevel(req.getExperienceLevel());
+        if (req.getIncomeLevel()     != null) job.setIncomeLevel(req.getIncomeLevel());
         if (req.getBenefits()        != null) job.setBenefits(req.getBenefits());
         if (req.getRequirements()    != null) job.setRequirements(req.getRequirements());
         if (req.getLocation()        != null) job.setLocation(req.getLocation());

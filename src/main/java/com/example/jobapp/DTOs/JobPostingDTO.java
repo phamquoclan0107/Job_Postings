@@ -1,5 +1,6 @@
 package com.example.jobapp.DTOs;
 
+import com.example.jobapp.Entity.JobPosting.IncomeLevel;
 import com.example.jobapp.Entity.JobPosting.JobStatus;
 import com.example.jobapp.Entity.JobPosting.JobType;
 import jakarta.validation.constraints.*;
@@ -38,6 +39,8 @@ public class JobPostingDTO {
         @Size(max = 100, message = "Cấp độ kinh nghiệm tối đa 100 ký tự")
         private String experienceLevel;
 
+        private IncomeLevel incomeLevel;
+
         @NotNull(message = "Trạng thái không được để trống")
         private JobStatus status;
 
@@ -75,6 +78,8 @@ public class JobPostingDTO {
         @Size(max = 100)
         private String experienceLevel;
 
+        private IncomeLevel incomeLevel;
+
         private JobStatus status;
 
         @Email
@@ -95,6 +100,7 @@ public class JobPostingDTO {
         private String categoryName;
         private JobType jobType;
         private String experienceLevel;
+        private IncomeLevel incomeLevel;
         private String location;
         private JobStatus status;
         private LocalDate expiresAt;
@@ -114,6 +120,7 @@ public class JobPostingDTO {
         private String description;
         private JobType jobType;
         private String experienceLevel;
+        private IncomeLevel incomeLevel;
         private String benefits;
         private String requirements;
         private String location;

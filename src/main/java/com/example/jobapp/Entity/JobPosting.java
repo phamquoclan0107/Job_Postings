@@ -55,7 +55,6 @@ public class JobPosting {
     @Column(name = "location", length = 200)
     private String location;
 
-    // Dùng VARCHAR + @JdbcTypeCode(SqlTypes.VARCHAR) để tránh MySQLEnumJdbcType đọc case-sensitive
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.VARCHAR)
     @Column(name = "job_type", length = 50)
@@ -63,6 +62,11 @@ public class JobPosting {
 
     @Column(name = "experience_level", length = 100)
     private String experienceLevel;
+
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.VARCHAR)
+    @Column(name = "income_level", length = 20)
+    private IncomeLevel incomeLevel;
 
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.VARCHAR)
@@ -95,6 +99,15 @@ public class JobPosting {
 
     public enum JobType {
         FULL_TIME, PART_TIME, CONTRACT, REMOTE, INTERNSHIP
+    }
+
+    public enum IncomeLevel {
+        THOA_THUAN,
+        DUOI_10TR,
+        TU_10_15TR,
+        TU_15_20TR,
+        TU_20_30TR,
+        TREN_30TR
     }
 
     public boolean isDeleted() {
