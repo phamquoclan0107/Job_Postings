@@ -5,7 +5,6 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -13,11 +12,11 @@ import java.time.LocalDateTime;
 @Table(
         name = "job_postings",
         indexes = {
-                @Index(name = "idx_job_status",    columnList = "status"),
-                @Index(name = "idx_job_category",  columnList = "category_id"),
-                @Index(name = "idx_job_expires",   columnList = "expires_at"),
-                @Index(name = "idx_job_deleted",   columnList = "deleted_at"),
-                @Index(name = "idx_job_title",     columnList = "title")
+                @Index(name = "idx_job_status",   columnList = "status"),
+                @Index(name = "idx_job_category", columnList = "category_id"),
+                @Index(name = "idx_job_expires",  columnList = "expires_at"),
+                @Index(name = "idx_job_deleted",  columnList = "deleted_at"),
+                @Index(name = "idx_job_title",    columnList = "title")
         }
 )
 @Getter @Setter
@@ -42,21 +41,11 @@ public class JobPosting {
     @Column(name = "title", nullable = false, length = 200)
     private String title;
 
-    @Column(name = "company_name", length = 200)
-    private String companyName;
+//    @Column(name = "company_name", length = 200)
+//    private String companyName;
 
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
-
-    // Dùng khoảng lương — bỏ field salary đơn lẻ
-    @Column(name = "salary_min", precision = 18, scale = 2)
-    private BigDecimal salaryMin;
-
-    @Column(name = "salary_max", precision = 18, scale = 2)
-    private BigDecimal salaryMax;
-
-    @Column(name = "salary_type", length = 50)
-    private String salaryType;
 
     @Column(name = "benefits", columnDefinition = "TEXT")
     private String benefits;
@@ -71,9 +60,9 @@ public class JobPosting {
     @Column(name = "job_type", length = 50)
     private JobType jobType;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "experience_level", length = 50)
-    private ExperienceLevel experienceLevel;
+    // Đổi sang VARCHAR — admin tự nhập tự do thay vì chọn enum cố định
+    @Column(name = "experience_level", length = 100)
+    private String experienceLevel;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false,
@@ -106,10 +95,6 @@ public class JobPosting {
 
     public enum JobType {
         FULL_TIME, PART_TIME, CONTRACT, REMOTE, INTERNSHIP
-    }
-
-    public enum ExperienceLevel {
-        FRESHER, JUNIOR, MID, SENIOR, LEAD
     }
 
     public boolean isDeleted() {

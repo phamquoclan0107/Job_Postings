@@ -26,9 +26,8 @@ public class Category {
     @Column(name = "name", nullable = false, length = 100)
     private String name;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "type", nullable = false, columnDefinition = "ENUM('JOB','PRODUCT')")
-    private CategoryType type;
+    @Column(name = "type", nullable = false, length = 20)
+    private String type;  // "JOB" hoặc "PRODUCT" — lưu dạng VARCHAR để tránh case-sensitive MySQL ENUM
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -40,7 +39,10 @@ public class Category {
     @OneToMany(mappedBy = "category", fetch = FetchType.LAZY)
     private List<Product> products;
 
-    public enum CategoryType {
-        JOB, PRODUCT
-    }
+    // Constants thay cho enum — để dùng như Category.TYPE_JOB
+    public static final String TYPE_JOB     = "JOB";
+    public static final String TYPE_PRODUCT = "PRODUCT";
+
+    public boolean isJobCategory()     { return TYPE_JOB.equalsIgnoreCase(type); }
+    public boolean isProductCategory() { return TYPE_PRODUCT.equalsIgnoreCase(type); }
 }

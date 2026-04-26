@@ -13,7 +13,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -58,8 +57,6 @@ public class JobPostingService {
     public Page<JobPostingDTO.SummaryResponse> search(
             String keyword,
             String location,
-            BigDecimal salaryMin,
-            BigDecimal salaryMax,
             Integer categoryId,
             JobStatus status,
             Pageable pageable) {
@@ -67,8 +64,6 @@ public class JobPostingService {
         return jobRepo.search(
                         isBlank(keyword)  ? null : keyword,
                         isBlank(location) ? null : location,
-                        salaryMin,
-                        salaryMax,
                         categoryId,
                         status,
                         pageable
@@ -77,8 +72,6 @@ public class JobPostingService {
     }
 
     public JobPostingDTO.DetailResponse create(JobPostingDTO.CreateRequest req) {
-        validateSalaryRange(req.getSalaryMin(), req.getSalaryMax());
-
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         Admin admin = adminRepo.findByUsername(username)
                 .orElseThrow(() -> AppException.notFound("Admin không tồn tại"));
@@ -86,8 +79,7 @@ public class JobPostingService {
         Category category = categoryRepo.findById(req.getCategoryId())
                 .orElseThrow(() -> AppException.notFound("Danh mục không tồn tại: " + req.getCategoryId()));
 
-        // Validate category phải đúng loại JOB
-        if (category.getType() != Category.CategoryType.JOB) {
+        if (!category.isJobCategory()) {
             throw AppException.badRequest("Danh mục phải thuộc loại JOB");
         }
 
@@ -95,11 +87,8 @@ public class JobPostingService {
                 .admin(admin)
                 .category(category)
                 .title(req.getTitle())
-                .companyName(req.getCompanyName())
+//                .companyName(req.getCompanyName())
                 .description(req.getDescription())
-                .salaryMin(req.getSalaryMin())
-                .salaryMax(req.getSalaryMax())
-                .salaryType(req.getSalaryType())
                 .jobType(req.getJobType())
                 .experienceLevel(req.getExperienceLevel())
                 .benefits(req.getBenefits())
@@ -116,31 +105,25 @@ public class JobPostingService {
     }
 
     public JobPostingDTO.DetailResponse update(Integer id, JobPostingDTO.UpdateRequest req) {
-        validateSalaryRange(req.getSalaryMin(), req.getSalaryMax());
-
         JobPosting job = jobRepo.findActiveById(id)
                 .orElseThrow(() -> AppException.notFound("Job Posting không tồn tại: " + id));
 
         if (req.getCategoryId() != null) {
             Category cat = categoryRepo.findById(req.getCategoryId())
                     .orElseThrow(() -> AppException.notFound("Danh mục không tồn tại: " + req.getCategoryId()));
-            if (cat.getType() != Category.CategoryType.JOB) {
+            if (!cat.isJobCategory()) {
                 throw AppException.badRequest("Danh mục phải thuộc loại JOB");
             }
             job.setCategory(cat);
         }
         if (req.getTitle()           != null) job.setTitle(req.getTitle());
-        if (req.getCompanyName()     != null) job.setCompanyName(req.getCompanyName());
+//        if (req.getCompanyName()     != null) job.setCompanyName(req.getCompanyName());
         if (req.getDescription()     != null) job.setDescription(req.getDescription());
-        if (req.getSalaryMin()       != null) job.setSalaryMin(req.getSalaryMin());
-        if (req.getSalaryMax()       != null) job.setSalaryMax(req.getSalaryMax());
-        if (req.getSalaryType()      != null) job.setSalaryType(req.getSalaryType());
         if (req.getJobType()         != null) job.setJobType(req.getJobType());
         if (req.getExperienceLevel() != null) job.setExperienceLevel(req.getExperienceLevel());
         if (req.getBenefits()        != null) job.setBenefits(req.getBenefits());
         if (req.getRequirements()    != null) job.setRequirements(req.getRequirements());
         if (req.getLocation()        != null) job.setLocation(req.getLocation());
-//        if (req.getImageUrl()        != null) job.setImageUrl(req.getImageUrl());
         if (req.getStatus()          != null) job.setStatus(req.getStatus());
         if (req.getContactEmail()    != null) job.setContactEmail(req.getContactEmail());
         if (req.getExpiresAt()       != null) job.setExpiresAt(req.getExpiresAt());
@@ -156,14 +139,6 @@ public class JobPostingService {
         }
         jobRepo.softDelete(id, LocalDateTime.now());
         log.info("Job soft-deleted: id={}", id);
-    }
-
-    private void validateSalaryRange(BigDecimal salaryMin, BigDecimal salaryMax) {
-        if (salaryMin != null && salaryMax != null) {
-            if (salaryMin.compareTo(salaryMax) > 0) {
-                throw AppException.badRequest("Lương tối thiểu không được lớn hơn lương tối đa");
-            }
-        }
     }
 
     private boolean isBlank(String s) {

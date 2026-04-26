@@ -1,12 +1,10 @@
 package com.example.jobapp.DTOs;
 
-import com.example.jobapp.Entity.JobPosting.ExperienceLevel;
 import com.example.jobapp.Entity.JobPosting.JobStatus;
 import com.example.jobapp.Entity.JobPosting.JobType;
 import jakarta.validation.constraints.*;
 import lombok.*;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -28,15 +26,6 @@ public class JobPostingDTO {
         @Size(max = 5000, message = "Mô tả tối đa 5000 ký tự")
         private String description;
 
-        @DecimalMin(value = "0", message = "Lương tối thiểu không được âm")
-        private BigDecimal salaryMin;
-
-        @DecimalMin(value = "0", message = "Lương tối đa không được âm")
-        private BigDecimal salaryMax;
-
-        @Size(max = 50, message = "Loại lương tối đa 50 ký tự")
-        private String salaryType;
-
         private String benefits;
 
         private String requirements;
@@ -46,7 +35,8 @@ public class JobPostingDTO {
 
         private JobType jobType;
 
-        private ExperienceLevel experienceLevel;
+        @Size(max = 100, message = "Cấp độ kinh nghiệm tối đa 100 ký tự")
+        private String experienceLevel;
 
         @NotNull(message = "Trạng thái không được để trống")
         private JobStatus status;
@@ -73,15 +63,6 @@ public class JobPostingDTO {
         @Size(max = 5000)
         private String description;
 
-        @DecimalMin(value = "0")
-        private BigDecimal salaryMin;
-
-        @DecimalMin(value = "0")
-        private BigDecimal salaryMax;
-
-        @Size(max = 50)
-        private String salaryType;
-
         private String benefits;
 
         private String requirements;
@@ -91,7 +72,8 @@ public class JobPostingDTO {
 
         private JobType jobType;
 
-        private ExperienceLevel experienceLevel;
+        @Size(max = 100)
+        private String experienceLevel;
 
         private JobStatus status;
 
@@ -111,11 +93,8 @@ public class JobPostingDTO {
         private String companyName;
         private Integer categoryId;
         private String categoryName;
-        private BigDecimal salaryMin;
-        private BigDecimal salaryMax;
-        private String salaryType;
         private JobType jobType;
-        private ExperienceLevel experienceLevel;
+        private String experienceLevel;
         private String location;
         private JobStatus status;
         private LocalDate expiresAt;
@@ -133,11 +112,8 @@ public class JobPostingDTO {
         private String title;
         private String companyName;
         private String description;
-        private BigDecimal salaryMin;
-        private BigDecimal salaryMax;
-        private String salaryType;
         private JobType jobType;
-        private ExperienceLevel experienceLevel;
+        private String experienceLevel;
         private String benefits;
         private String requirements;
         private String location;
