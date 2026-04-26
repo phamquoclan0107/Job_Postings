@@ -4,77 +4,56 @@ import jakarta.validation.constraints.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
-
-// ============================================================
-//  PRODUCT DTOs
-// ============================================================
+import java.util.List;
 
 public class ProductDTO {
 
-    // --------------------------------------------------------
-    // Request: Tạo mới sản phẩm
-    // --------------------------------------------------------
     @Getter @Setter
     public static class CreateRequest {
 
-        @NotNull(message = "Danh mục sản phẩm không được để trống")
+        @NotNull(message = "Danh mục không được để trống")
         private Integer categoryId;
 
+        @NotBlank(message = "Mã sản phẩm không được để trống")
+        @Size(max = 50, message = "Mã sản phẩm tối đa 50 ký tự")
+        @Pattern(regexp = "^[A-Z0-9_-]+$",
+                message = "Mã sản phẩm chỉ chứa chữ hoa, số, dấu gạch")
+        private String productCode;
+
         @NotBlank(message = "Tên sản phẩm không được để trống")
-        @Size(min = 2, max = 200, message = "Tên sản phẩm từ 2–200 ký tự")
+        @Size(min = 2, max = 200, message = "Tên sản phẩm từ 2-200 ký tự")
         private String name;
 
         @Size(max = 5000, message = "Mô tả tối đa 5000 ký tự")
         private String description;
-
-        @Size(max = 500, message = "URL ảnh tối đa 500 ký tự")
-        @Pattern(
-                regexp = "^(https?://.*|/.*)?$",
-                message = "URL ảnh phải bắt đầu bằng http://, https://, hoặc /"
-        )
-        private String imageUrl;
 
         private Boolean isActive = true;
     }
 
-    // --------------------------------------------------------
-    // Request: Cập nhật sản phẩm
-    // --------------------------------------------------------
     @Getter @Setter
     public static class UpdateRequest {
-
         private Integer categoryId;
 
-        @Size(min = 2, max = 200, message = "Tên sản phẩm từ 2–200 ký tự")
+        @Size(min = 2, max = 200)
         private String name;
 
-        @Size(max = 5000, message = "Mô tả tối đa 5000 ký tự")
+        @Size(max = 5000)
         private String description;
-
-        @Size(max = 500, message = "URL ảnh tối đa 500 ký tự")
-        @Pattern(
-                regexp = "^(https?://.*|/.*)?$",
-                message = "URL ảnh phải bắt đầu bằng http://, https://, hoặc /"
-        )
-        private String imageUrl;
 
         private Boolean isActive;
     }
 
-    // --------------------------------------------------------
-    // Response
-    // --------------------------------------------------------
-    @Getter @Setter
-    @Builder
+    @Getter @Setter @Builder
     @NoArgsConstructor @AllArgsConstructor
     public static class Response {
         private Integer id;
+        private String productCode;
         private Integer categoryId;
         private String categoryName;
         private String name;
         private String description;
-        private String imageUrl;
         private Boolean isActive;
+        private List<ProductImageDTO.Response> images;
         private LocalDateTime createdAt;
         private LocalDateTime updatedAt;
     }

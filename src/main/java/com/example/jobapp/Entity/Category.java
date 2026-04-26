@@ -21,23 +21,22 @@ public class Category {
     @Column(name = "name", nullable = false, length = 100)
     private String name;
 
-    // Phân biệt danh mục tuyển dụng và sản phẩm
     @Enumerated(EnumType.STRING)
-    @Column(name = "type", nullable = false, columnDefinition = "ENUM('job','product')")
+    @Column(name = "type", nullable = false, columnDefinition = "ENUM('JOB','PRODUCT')")
     private CategoryType type;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    // Quan hệ ngược — không bắt buộc, tiện dùng khi cần
     @OneToMany(mappedBy = "category", fetch = FetchType.LAZY)
     private List<JobPosting> jobPostings;
 
     @OneToMany(mappedBy = "category", fetch = FetchType.LAZY)
     private List<Product> products;
 
+    // ✅ FIX: Uppercase theo yêu cầu
     public enum CategoryType {
-        job, product
+        JOB, PRODUCT
     }
 }
