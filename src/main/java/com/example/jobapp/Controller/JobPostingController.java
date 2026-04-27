@@ -11,7 +11,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
@@ -25,8 +24,6 @@ public class JobPostingController {
     public ResponseEntity<ApiResponse<Page<JobPostingDTO.SummaryResponse>>> getAll(
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String location,
-            @RequestParam(required = false) BigDecimal salaryMin,
-            @RequestParam(required = false) BigDecimal salaryMax,
             @RequestParam(required = false) Integer categoryId,
             @RequestParam(required = false) JobStatus status,
             @RequestParam(defaultValue = "0")  int page,
@@ -35,7 +32,7 @@ public class JobPostingController {
 
         Pageable pageable = buildPageable(page, size, sort);
         Page<JobPostingDTO.SummaryResponse> result = jobService.search(
-                keyword, location, salaryMin, salaryMax, categoryId, status, pageable);
+                keyword, location, categoryId, status, pageable);
         return ResponseEntity.ok(ApiResponse.ok(result));
     }
 

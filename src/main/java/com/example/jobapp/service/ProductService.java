@@ -26,7 +26,7 @@ public class ProductService {
     private final ProductImageRepository imageRepo;
     private final CategoryRepository     categoryRepo;
     private final ProductMapper          mapper;
-    private final FileStorageService     fileStorage;
+    private final MinioService           minioService;  // ← đổi sang MinioService
 
     // ─── Read ──────────────────────────────────────────────────────────────────
 
@@ -92,12 +92,12 @@ public class ProductService {
         Product product = productRepo.findByIdWithDetails(id)
                 .orElseThrow(() -> AppException.notFound("Sản phẩm không tồn tại: " + id));
 
-        // Xóa file ảnh trên disk trước khi xóa DB
         for (ProductImage img : product.getImages()) {
             try {
-                fileStorage.deleteProductImage(img.getUrl());
+                String objectName = extractObjectName(img.getUrl());
+                minioService.deleteFile(objectName);
             } catch (Exception e) {
-                log.warn("Could not delete image file: {}", img.getUrl());
+                log.warn("Could not delete image from MinIO: {}", img.getUrl());
             }
         }
 
@@ -107,10 +107,6 @@ public class ProductService {
 
     // ─── Image management ──────────────────────────────────────────────────────
 
-    /**
-     * Upload nhiều ảnh cho product.
-     * Tên file: productCode_originalName (sort_order theo thứ tự upload)
-     */
     public List<ProductImageDTO.Response> addImages(Integer productId, List<MultipartFile> files) {
         Product product = productRepo.findByIdWithDetails(productId)
                 .orElseThrow(() -> AppException.notFound("Sản phẩm không tồn tại: " + productId));
@@ -122,12 +118,12 @@ public class ProductService {
             MultipartFile file = files.get(i);
             if (file.isEmpty()) continue;
 
-            String url      = fileStorage.saveProductImage(file, product.getProductCode());
-            String filename = fileStorage.extractPublicFilename(url);
+            // ← upload lên MinIO, lấy public URL
+            String url = minioService.uploadFile(file);
 
             ProductImage image = ProductImage.builder()
                     .product(product)
-                    .fileName(filename)
+                    .fileName(extractObjectName(url))
                     .url(url)
                     .sortOrder((int) (currentCount + i))
                     .build();
@@ -140,9 +136,6 @@ public class ProductService {
         return result;
     }
 
-    /**
-     * Xóa 1 ảnh theo imageId.
-     */
     public void deleteImage(Integer productId, Integer imageId) {
         ProductImage image = imageRepo.findById(imageId)
                 .orElseThrow(() -> AppException.notFound("Ảnh không tồn tại: " + imageId));
@@ -152,18 +145,16 @@ public class ProductService {
         }
 
         try {
-            fileStorage.deleteProductImage(image.getUrl());
+            String objectName = extractObjectName(image.getUrl());
+            minioService.deleteFile(objectName);
         } catch (Exception e) {
-            log.warn("Could not delete image file: {}", image.getUrl());
+            log.warn("Could not delete image from MinIO: {}", image.getUrl());
         }
 
         imageRepo.deleteById(imageId);
         log.info("Image deleted: id={}", imageId);
     }
 
-    /**
-     * Cập nhật sort_order của ảnh.
-     */
     public ProductImageDTO.Response updateImageSortOrder(Integer productId,
                                                          Integer imageId,
                                                          Integer sortOrder) {
@@ -177,5 +168,13 @@ public class ProductService {
         image.setSortOrder(sortOrder);
         ProductImage saved = imageRepo.save(image);
         return mapper.toImageResponse(saved);
+    }
+
+    // ─── Helpers ───────────────────────────────────────────────────────────────
+
+    /** Lấy objectName từ MinIO URL. VD: http://host/bucket/uuid.jpg → uuid.jpg */
+    private String extractObjectName(String url) {
+        if (url == null || url.isBlank()) return "";
+        return url.substring(url.lastIndexOf("/") + 1);
     }
 }

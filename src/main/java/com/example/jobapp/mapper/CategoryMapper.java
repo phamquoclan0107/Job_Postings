@@ -7,12 +7,12 @@ import org.springframework.stereotype.Component;
 @Component
 public class CategoryMapper {
 
-    public CategoryDTO.Response toResponse(Category c) {
+    public CategoryDTO.Response toResponse(Category category) {
         return CategoryDTO.Response.builder()
-                .id(c.getId())
-                .name(c.getName())
-                .type(c.getType())
-                .createdAt(c.getCreatedAt())
+                .id(category.getId())
+                .name(category.getName())
+                .type(category.getType())
+                .createdAt(category.getCreatedAt())
                 .build();
     }
 }

@@ -2,8 +2,6 @@ package com.example.jobapp.Controller;
 
 import com.example.jobapp.common.ApiResponse;
 import com.example.jobapp.DTOs.CategoryDTO;
-import com.example.jobapp.Entity.Category.CategoryType;
-import com.example.jobapp.exception.AppException;
 import com.example.jobapp.service.CategoryService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -13,14 +11,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-/**
- * GET  /api/categories          — tất cả danh mục
- * GET  /api/categories?type=JOB — lọc theo type
- * GET  /api/categories/{id}     — chi tiết
- * POST /api/categories          — tạo mới (cần JWT)
- * PUT  /api/categories/{id}     — cập nhật (cần JWT)
- * DELETE /api/categories/{id}   — xóa (cần JWT)
- */
 @RestController
 @RequestMapping("/api/categories")
 @RequiredArgsConstructor
@@ -31,25 +21,15 @@ public class CategoryController {
     @GetMapping
     public ResponseEntity<ApiResponse<List<CategoryDTO.Response>>> getAll(
             @RequestParam(required = false) String type) {
-
-        CategoryType parsedType = null;
-        if (type != null && !type.isBlank()) {
-            try {
-                parsedType = CategoryType.valueOf(type.toUpperCase());
-            } catch (IllegalArgumentException e) {
-                throw AppException.badRequest("Loại danh mục không hợp lệ: '" + type + "'. Chỉ chấp nhận JOB hoặc PRODUCT");
-            }
-        }
-
-        List<CategoryDTO.Response> data = (parsedType != null)
-                ? categoryService.getByType(parsedType)
+        List<CategoryDTO.Response> result = (type != null && !type.isBlank())
+                ? categoryService.getByType(type)
                 : categoryService.getAll();
-
-        return ResponseEntity.ok(ApiResponse.ok(data));
+        return ResponseEntity.ok(ApiResponse.ok(result));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<CategoryDTO.Response>> getById(@PathVariable Integer id) {
+    public ResponseEntity<ApiResponse<CategoryDTO.Response>> getById(
+            @PathVariable Integer id) {
         return ResponseEntity.ok(ApiResponse.ok(categoryService.getById(id)));
     }
 

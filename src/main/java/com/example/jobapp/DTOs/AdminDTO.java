@@ -49,25 +49,23 @@ public class AdminDTO {
     }
 
     // ─── Change Password ──────────────────────────────────────────────────────
-    // Luồng: FE gửi 3 field → DTO nhận (không lưu DB) → Service hash → lưu password_hash
 
     @Getter @Setter
     public static class ChangePasswordRequest {
         @NotBlank(message = "Mật khẩu cũ không được để trống")
-        private String oldPassword;       // FE → DTO (không lưu DB)
+        private String oldPassword;
 
         @NotBlank(message = "Mật khẩu mới không được để trống")
         @Size(min = 6, max = 100, message = "Mật khẩu mới từ 6-100 ký tự")
         @Pattern(regexp = "^(?=.*[A-Za-z])(?=.*\\d).+$",
                 message = "Mật khẩu mới phải chứa ít nhất 1 chữ và 1 số")
-        private String newPassword;       // FE → DTO (không lưu DB)
+        private String newPassword;
 
         @NotBlank(message = "Xác nhận mật khẩu không được để trống")
-        private String confirmPassword;   // FE → DTO (không lưu DB)
-        // Service: verify oldPassword → hash(newPassword) → lưu password_hash ✓
+        private String confirmPassword;
     }
 
-    // ─── Forgot Password — B1: gửi OTP về email ──────────────────────────────
+    // ─── Forgot Password ──────────────────────────────────────────────────────
 
     @Getter @Setter
     public static class ForgotPasswordRequest {
@@ -75,10 +73,6 @@ public class AdminDTO {
         @Email(message = "Email không đúng định dạng")
         private String email;
     }
-
-    // ─── Forgot Password — B2: xác thực OTP + đặt mật khẩu mới ─────────────
-    // Luồng: FE gửi email + otp + newPassword + confirmPassword
-    //        → DTO nhận (không lưu DB) → Service verify OTP → hash → lưu password_hash
 
     @Getter @Setter
     public static class ResetPasswordRequest {
@@ -88,26 +82,31 @@ public class AdminDTO {
 
         @NotBlank(message = "OTP không được để trống")
         @Size(min = 6, max = 6, message = "OTP gồm 6 chữ số")
-        private String otp;               // FE → DTO (không lưu DB)
+        private String otp;
 
         @NotBlank(message = "Mật khẩu mới không được để trống")
         @Size(min = 6, max = 100, message = "Mật khẩu từ 6-100 ký tự")
         @Pattern(regexp = "^(?=.*[A-Za-z])(?=.*\\d).+$",
                 message = "Mật khẩu phải chứa ít nhất 1 chữ và 1 số")
-        private String newPassword;       // FE → DTO (không lưu DB)
+        private String newPassword;
 
         @NotBlank(message = "Xác nhận mật khẩu không được để trống")
-        private String confirmPassword;   // FE → DTO (không lưu DB)
-        // Service: verify OTP → hash(newPassword) → lưu password_hash ✓
+        private String confirmPassword;
     }
 
-    // ─── Update Profile ───────────────────────────────────────────────────────
+    // ─── Update Profile — MỞ RỘNG thêm fullName, phone ──────────────────────
 
     @Getter @Setter
     public static class UpdateProfileRequest {
         @Email(message = "Email không đúng định dạng")
         @Size(max = 100)
         private String email;
+
+        @Size(max = 100, message = "Họ và tên tối đa 100 ký tự")
+        private String fullName;
+
+        @Pattern(regexp = "^(\\+?[0-9\\s\\-]{7,20})?$", message = "Số điện thoại không hợp lệ")
+        private String phone;
     }
 
     // ─── Responses ────────────────────────────────────────────────────────────
@@ -127,6 +126,8 @@ public class AdminDTO {
         private Integer id;
         private String username;
         private String email;
+        private String fullName;   // THÊM MỚI
+        private String phone;      // THÊM MỚI
         private LocalDateTime createdAt;
     }
 }
