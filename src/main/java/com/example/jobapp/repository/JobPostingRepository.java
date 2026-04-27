@@ -34,8 +34,8 @@ public interface JobPostingRepository extends JpaRepository<JobPosting, Integer>
             "AND (:keyword IS NULL OR LOWER(j.title) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
             "     OR LOWER(j.description) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
             "AND (:location IS NULL OR LOWER(j.location) LIKE LOWER(CONCAT('%', :location, '%'))) " +
-            "AND (:salaryMin IS NULL OR j.salary >= :salaryMin) " +
-            "AND (:salaryMax IS NULL OR j.salary <= :salaryMax) " +
+            "AND (:salaryMin IS NULL OR j.salaryMin >= :salaryMin) " +
+            "AND (:salaryMax IS NULL OR j.salaryMax <= :salaryMax) " +
             "AND (:categoryId IS NULL OR c.id = :categoryId) " +
             "AND (:status IS NULL OR j.status = :status)",
             countQuery = "SELECT COUNT(j) FROM JobPosting j " +
@@ -43,8 +43,8 @@ public interface JobPostingRepository extends JpaRepository<JobPosting, Integer>
                     "AND (:keyword IS NULL OR LOWER(j.title) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
                     "     OR LOWER(j.description) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
                     "AND (:location IS NULL OR LOWER(j.location) LIKE LOWER(CONCAT('%', :location, '%'))) " +
-                    "AND (:salaryMin IS NULL OR j.salary >= :salaryMin) " +
-                    "AND (:salaryMax IS NULL OR j.salary <= :salaryMax) " +
+                    "AND (:salaryMin IS NULL OR j.salaryMin >= :salaryMin) " +
+                    "AND (:salaryMax IS NULL OR j.salaryMax <= :salaryMax) " +
                     "AND (:categoryId IS NULL OR j.category.id = :categoryId) " +
                     "AND (:status IS NULL OR j.status = :status)")
     Page<JobPosting> search(

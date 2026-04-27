@@ -87,7 +87,7 @@ public class JobPostingService {
                 .orElseThrow(() -> AppException.notFound("Danh mục không tồn tại: " + req.getCategoryId()));
 
         // Validate category phải đúng loại JOB
-        if (category.getType() != Category.CategoryType.JOB) {
+        if (category.getType() != Category.CategoryType.job) {
             throw AppException.badRequest("Danh mục phải thuộc loại JOB");
         }
 
@@ -125,7 +125,7 @@ public class JobPostingService {
         if (req.getCategoryId() != null) {
             Category cat = categoryRepo.findById(req.getCategoryId())
                     .orElseThrow(() -> AppException.notFound("Danh mục không tồn tại: " + req.getCategoryId()));
-            if (cat.getType() != Category.CategoryType.JOB) {
+            if (cat.getType() != Category.CategoryType.job) {
                 throw AppException.badRequest("Danh mục phải thuộc loại JOB");
             }
             job.setCategory(cat);
