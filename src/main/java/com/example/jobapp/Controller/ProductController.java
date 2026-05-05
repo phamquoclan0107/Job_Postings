@@ -38,6 +38,7 @@ public class ProductController {
     public ResponseEntity<ApiResponse<Page<ProductDTO.Response>>> getAll(
             @RequestParam(required = false) Integer categoryId,
             @RequestParam(required = false) Boolean isActive,
+            @RequestParam(required = false) String name,
             @RequestParam(defaultValue = "0")  int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createdAt,desc") String sort) {
@@ -47,7 +48,7 @@ public class ProductController {
                 ? Sort.Direction.ASC : Sort.Direction.DESC;
         Pageable pageable = PageRequest.of(page, size, Sort.by(dir, parts[0]));
 
-        return ResponseEntity.ok(ApiResponse.ok(productService.search(categoryId, isActive, pageable)));
+        return ResponseEntity.ok(ApiResponse.ok(productService.search(categoryId, isActive, name, pageable)));
     }
 
     @GetMapping("/{id}")

@@ -20,14 +20,16 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
             "WHERE p.id = :id")
     Optional<Product> findByIdWithDetails(@Param("id") Integer id);
 
-    // ✅ Pagination + filter (category, isActive)
+    // ✅ Pagination + filter (category, isActive, name)
     @Query("SELECT p FROM Product p " +
             "JOIN FETCH p.category c " +
             "WHERE (:categoryId IS NULL OR c.id = :categoryId) " +
-            "AND (:isActive IS NULL OR p.isActive = :isActive)")
+            "AND (:isActive IS NULL OR p.isActive = :isActive) " +
+            "AND (:name IS NULL OR LOWER(p.name) LIKE LOWER(CONCAT('%', :name, '%')))")
     Page<Product> search(
             @Param("categoryId") Integer categoryId,
             @Param("isActive")   Boolean isActive,
+            @Param("name")       String name,
             Pageable pageable
     );
 

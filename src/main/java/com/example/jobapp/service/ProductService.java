@@ -31,8 +31,8 @@ public class ProductService {
     // ─── Read ──────────────────────────────────────────────────────────────────
 
     @Transactional(readOnly = true)
-    public Page<ProductDTO.Response> search(Integer categoryId, Boolean isActive, Pageable pageable) {
-        return productRepo.search(categoryId, isActive, pageable)
+    public Page<ProductDTO.Response> search(Integer categoryId, Boolean isActive, String name, Pageable pageable) {
+        return productRepo.search(categoryId, isActive, name, pageable)
                 .map(mapper::toResponse);
     }
 
